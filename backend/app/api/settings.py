@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Any
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -48,3 +49,51 @@ def get_profile(current_user: User = Depends(get_current_user)):
         "role": current_user.role,
         "created_at": current_user.created_at.isoformat()
     }
+
+
+from pydantic import BaseModel
+class GeminiKeyRequest(BaseModel):
+    api_key: str
+
+@router.post("/gemini-key")
+def update_gemini_api_key(
+    req: GeminiKeyRequest,
+    current_user: User = Depends(get_current_user)
+):
+    key = req.api_key.strip()
+    if not key:
+        return {"status": "error", "message": "API key cannot be empty"}
+    
+    settings.GEMINI_API_KEY = key
+    
+    # Persist to .env file if it exists
+    env_path = os.path.abspath(".env")
+    if not os.path.exists(env_path):
+        env_path = os.path.abspath("../.env")
+        
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            
+            key_updated = False
+            new_lines = []
+            for line in lines:
+                if line.startswith("GEMINI_API_KEY="):
+                    new_lines.append(f"GEMINI_API_KEY={key}\n")
+                    key_updated = True
+                else:
+                    new_lines.append(line)
+            if not key_updated:
+                new_lines.append(f"GEMINI_API_KEY={key}\n")
+                
+            with open(env_path, "w", encoding="utf-8") as f:
+                f.writelines(new_lines)
+        except Exception as e:
+            pass
+            
+    return {
+        "status": "success",
+        "message": "Gemini API key updated successfully and active for real-time streaming."
+    }
+

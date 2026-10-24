@@ -24,6 +24,25 @@ export const SettingsPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [uploading, setUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [geminiKeyInput, setGeminiKeyInput] = useState<string>('');
+  const [savingKey, setSavingKey] = useState<boolean>(false);
+  const [keySaveFeedback, setKeySaveFeedback] = useState<string | null>(null);
+
+  const handleSaveGeminiKey = async () => {
+    if (!geminiKeyInput.trim()) return;
+    setSavingKey(true);
+    setKeySaveFeedback(null);
+    try {
+      const res = await api.updateGeminiKey(geminiKeyInput.trim());
+      setKeySaveFeedback(res.message || 'Key saved successfully');
+      setGeminiKeyInput('');
+      loadData();
+    } catch (err: any) {
+      setKeySaveFeedback(err.message || 'Failed to save key');
+    } finally {
+      setSavingKey(false);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -172,9 +191,36 @@ export const SettingsPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-[11px] text-slate-400 leading-relaxed">
-            <span className="font-semibold text-slate-300 block mb-0.5">API Key Setup:</span>
-            To enable live streaming, set <code className="text-purple-300">GEMINI_API_KEY</code> in your <code className="text-purple-300">.env</code> file. The API key is securely isolated on the backend and never sent to the browser.
+          {/* Interactive API Key Input */}
+          <div className="pt-2 border-t border-slate-800 space-y-2">
+            <label className="text-xs font-semibold text-slate-300 flex items-center space-x-1.5">
+              <Key className="w-3.5 h-3.5 text-purple-400" />
+              <span>Configure Gemini API Key</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                placeholder="Paste your Google AI Studio API key here (AIza...)"
+                value={geminiKeyInput}
+                onChange={(e) => setGeminiKeyInput(e.target.value)}
+                className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 font-mono"
+              />
+              <button
+                disabled={savingKey || !geminiKeyInput.trim()}
+                onClick={handleSaveGeminiKey}
+                className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-40 rounded-xl text-xs font-semibold text-white transition-all shadow-md shrink-0"
+              >
+                {savingKey ? 'Saving...' : 'Save Key'}
+              </button>
+            </div>
+            {keySaveFeedback && (
+              <p className={`text-xs ${keySaveFeedback.includes('success') ? 'text-emerald-400' : 'text-red-400'}`}>
+                {keySaveFeedback}
+              </p>
+            )}
+            <p className="text-[11px] text-slate-500">
+              Obtain your free Gemini API key from <a href="https://aistudio.google.com/" target="_blank" rel="noreferrer" className="text-purple-400 underline">Google AI Studio</a>. The key is securely stored in your backend configuration.
+            </p>
           </div>
         </div>
       </div>

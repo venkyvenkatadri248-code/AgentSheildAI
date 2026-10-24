@@ -278,4 +278,11 @@ export const api = {
   async getHealth(): Promise<any> {
     return request('/settings/health');
   },
+
+  async updateGeminiKey(apiKey: string): Promise<any> {
+    return request('/settings/gemini-key', {
+      method: 'POST',
+      body: JSON.stringify({ api_key: apiKey }),
+    });
+  },
 };
