@@ -13,7 +13,16 @@ from app.models.entities import Agent, Conversation, Message, User, ToolCall, Se
 from app.services.event_broadcaster import broadcaster
 from app.security.gateway import CentralSecurityGateway
 from app.agents.agent_tools import execute_tool
-from app.security.detectors import detect_direct_prompt_injection
+from app.security.detectors import (
+    detect_direct_prompt_injection,
+    detect_sensitive_data,
+    detect_path_traversal,
+    detect_protected_file_target,
+    detect_prohibited_code_execution,
+    detect_unapproved_database_modifications,
+    detect_ssrf_and_restricted_urls,
+    ThreatDetectionResult
+)
 
 logger = logging.getLogger("agentshield.gemini")
 
@@ -410,21 +419,49 @@ class GeminiService:
         }
 
         # -------------------------------------------------------------
-        # STEP 1: Direct Prompt Injection Check on Raw Input
+        # STEP 1: Multi-Layer Perimeter Threat Check on Input Prompt
         # -------------------------------------------------------------
-        det = detect_direct_prompt_injection(user_message_content)
-        if det.detected:
+        threat: Optional[ThreatDetectionResult] = None
+
+        # 1. Direct prompt injection, persona hijack, and adversarial overrides
+        threat = detect_direct_prompt_injection(user_message_content)
+
+        # 2. Sensitive data / credentials leakage in prompt
+        if not threat or not threat.detected:
+            threat = detect_sensitive_data(user_message_content)
+
+        # 3. Path traversal attacks in prompt
+        if not threat or not threat.detected:
+            threat = detect_path_traversal(user_message_content)
+
+        # 4. Protected configuration and system files
+        if not threat or not threat.detected:
+            threat = detect_protected_file_target(user_message_content)
+
+        # 5. Prohibited dynamic code execution
+        if not threat or not threat.detected:
+            threat = detect_prohibited_code_execution(user_message_content)
+
+        # 6. Unapproved database modification / SQL injection
+        if not threat or not threat.detected:
+            threat = detect_unapproved_database_modifications(user_message_content)
+
+        # 7. SSRF and restricted cloud/internal URL targeting
+        if not threat or not threat.detected:
+            threat = detect_ssrf_and_restricted_urls(user_message_content)
+
+        if threat and threat.detected:
             decision = CentralSecurityGateway._block_action(
                 db=db,
                 actor=actor,
                 agent=agent,
                 decision_id=str(uuid.uuid4()),
                 tool_name="chat_input",
-                risk_category="prompt_injection",
-                severity=det.severity,
+                risk_category=threat.category,
+                severity=threat.severity,
                 policy=None,
-                explanation=f"Direct prompt injection detected in input prompt. {det.reason}.",
-                evidence=det.evidence,
+                explanation=f"{threat.reason}. Request intercepted at security perimeter.",
+                evidence=threat.evidence,
                 conversation_id=conversation.id
             )
 
@@ -444,8 +481,13 @@ class GeminiService:
             db.commit()
 
             notice_text = (
-                "I apologize, but I cannot fulfill this request because it violates safety and security policies. "
-                "Please let me know if there is another task I can help you with."
+                f"🛡️ **Central Security Gateway Interception:**\n\n"
+                f"Your request was intercepted and blocked before execution because it violates safety and security policies:\n\n"
+                f"- **Threat Category:** `{decision.risk_category}`\n"
+                f"- **Severity:** `{decision.severity}`\n"
+                f"- **Reason:** {decision.explanation}\n"
+                f"- **Lifecycle State:** `PREVENTION_VERIFIED` (Target resources unmodified)\n\n"
+                f"*A security alert has been recorded on the Operations Dashboard.*"
             )
 
             yield {"event": "security_block", "data": decision.dict()}

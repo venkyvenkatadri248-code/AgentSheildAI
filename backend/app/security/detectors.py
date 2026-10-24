@@ -20,16 +20,21 @@ class ThreatDetectionResult:
 
 # Direct Prompt Injection Patterns
 PROMPT_INJECTION_PATTERNS = [
-    (r"ignore\s+(all\s+)?(previous|prior|above)\s+instructions", "Instruction override attempt"),
-    (r"disregard\s+(all\s+)?(previous|safety|security)\s+(rules|guidelines|policies)", "Safety policy bypass attempt"),
-    (r"you\s+are\s+now\s+(in\s+developer\s+mode|dan|unrestricted|jailbroken)", "Persona hijack / jailbreak attempt"),
-    (r"reveal\s+(your\s+)?(system\s+prompt|core\s+instructions|secret\s+key)", "System prompt / secret exfiltration attempt"),
+    (r"ignore\s+(all\s+)?(previous|prior|above|past)\s+(instructions|prompts|rules|commands)", "Instruction override attempt"),
+    (r"disregard\s+(all\s+)?(previous|prior|safety|security|all)\s+(rules|guidelines|policies|instructions)", "Safety policy bypass attempt"),
+    (r"you\s+are\s+now\s+(in\s+developer\s+mode|dan|unrestricted|jailbroken|evil|unfiltered|an\s+ai\s+without\s+rules)", "Persona hijack / jailbreak attempt"),
+    (r"(?:act|pretend|behave)\s+as\s+(?:an\s+unrestricted|a\s+jailbroken|an\s+evil|dan|a\s+hacker|someone\s+without\s+rules)", "Adversarial roleplay jailbreak attempt"),
+    (r"(?:reveal|print|show|output|repeat|leak|display)\s+(?:your\s+)?(?:system\s+prompt|core\s+instructions|system\s+instructions|initial\s+prompt|secret\s+key|all\s+rules)", "System prompt / secret exfiltration attempt"),
+    (r"what\s+(?:is|are)\s+your\s+(?:exact\s+)?(?:system\s+prompt|core\s+instructions|initial\s+instructions|internal\s+rules)", "System prompt exfiltration query"),
     (r"system:\s*override", "Simulated system message injection"),
-    (r"do\s+not\s+follow\s+any\s+(safety|rules|instructions)", "Safeguard suppression"),
-    (r"bypass\s+(the\s+)?(security\s+gateway|guardrails|filters)", "Security gateway bypass attempt"),
+    (r"do\s+not\s+follow\s+any\s+(?:safety|rules|instructions|policies)", "Safeguard suppression"),
+    (r"bypass\s+(?:the\s+)?(?:security\s+gateway|guardrails|filters|restrictions)", "Security gateway bypass attempt"),
     (r";\s*drop\s+table\s+", "SQL Injection marker"),
     (r"\brm\s+-rf\s+", "Destructive shell command execution marker"),
     (r"\b(curl|wget)\s+http[s]?://", "Arbitrary external network exfiltration marker"),
+    (r"\b(?:format\s+[a-z]:|mkfs\b|del\s+\/f\s+\/s)", "Destructive disk formatting command"),
+    (r"\b(?:nc|netcat)\s+-[lvpne]", "Reverse shell connection attempt"),
+    (r"\[SYSTEM(?:\s+PROMPT)?:\s*OVERRIDE\]", "Bracketed system prompt emulation"),
 ]
 
 # Indirect Prompt Injection Patterns in untrusted payloads

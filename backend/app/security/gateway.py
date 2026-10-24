@@ -534,6 +534,16 @@ class CentralSecurityGateway:
             "explanation": explanation
         })
 
+        # Broadcast live security event to dashboard
+        broadcaster.broadcast_sync("security_event", {
+            "decision_id": decision_id,
+            "status": "BLOCKED",
+            "agent": agent.name,
+            "tool": tool_name,
+            "severity": severity,
+            "risk_category": risk_category
+        })
+
         return SecurityDecision(
             decision_id=decision_id,
             allowed=False,
