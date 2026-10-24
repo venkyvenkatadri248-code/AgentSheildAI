@@ -50,3 +50,9 @@ def mail_agent(db_session):
 @pytest.fixture
 def file_agent(db_session):
     return db_session.query(Agent).filter(Agent.key == "file_agent").first()
+
+
+@pytest.fixture
+def data_agent(db_session):
+    return db_session.query(Agent).filter(Agent.key == "data_analysis_agent").first()
+

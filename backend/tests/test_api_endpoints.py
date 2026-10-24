@@ -1,7 +1,13 @@
+import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 from app.services.auth_service import create_access_token
-from app.database.session import SessionLocal
+from app.database.session import SessionLocal, Base, engine
+from app.database.seed import seed_database
+
+Base.metadata.create_all(bind=engine)
+with SessionLocal() as _db:
+    seed_database(_db)
 
 client = TestClient(app)
 
@@ -59,6 +65,24 @@ def test_dashboard_metrics_real_data():
     assert data["metrics"]["active_agents"] == 4
     assert isinstance(data["events_over_time"], list)
     assert isinstance(data["recent_activity"], list)
+    assert "agent_summaries" in data
+    assert len(data["agent_summaries"]) == 4
+
+
+def test_dashboard_metrics_agent_filter():
+    token = get_admin_token()
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Query metrics filtered by Research Agent key
+    response = client.get("/api/dashboard/metrics?agent_id=research_agent", headers=headers)
+    assert response.status_code == 200
+    data = response.json()
+    assert "metrics" in data
+    assert data["metrics"]["total_agents"] == 1
+    assert data["selected_agent"] is not None
+    assert data["selected_agent"]["key"] == "research_agent"
+    assert "tool_usage_breakdown" in data
+
 
 
 def test_protection_policies_and_update():

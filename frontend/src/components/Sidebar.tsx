@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Bot,
-  MessageSquare,
   AlertTriangle,
   ShieldCheck,
   History,
@@ -17,7 +16,6 @@ export const Sidebar: React.FC = () => {
   const navItems = [
     { name: 'Home', path: '/', icon: LayoutDashboard },
     { name: 'My Agents', path: '/agents', icon: Bot },
-    { name: 'Chat', path: '/chat', icon: MessageSquare },
     { name: 'Alerts', path: '/alerts', icon: AlertTriangle },
     { name: 'Protection', path: '/protection', icon: ShieldCheck, badge: pendingApprovalsCount },
     { name: 'History', path: '/history', icon: History },

@@ -266,6 +266,7 @@ class MetricSummary(BaseModel):
     pending_approvals: int
     total_tasks: int
     open_alerts: int
+    prevention_rate: Optional[float] = 100.0
 
 
 class DashboardMetricsResponse(BaseModel):
@@ -275,6 +276,11 @@ class DashboardMetricsResponse(BaseModel):
     severity_distribution: List[Dict[str, Any]]
     agent_activity: List[Dict[str, Any]]
     recent_activity: List[Dict[str, Any]]
+    selected_agent: Optional[Dict[str, Any]] = None
+    agent_summaries: List[Dict[str, Any]] = Field(default_factory=list)
+    agent_comparison: List[Dict[str, Any]] = Field(default_factory=list)
+    tool_usage_breakdown: List[Dict[str, Any]] = Field(default_factory=list)
+    threat_category_breakdown: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 # ==============================

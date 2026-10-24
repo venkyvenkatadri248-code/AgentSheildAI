@@ -16,6 +16,7 @@ interface NotificationContextType {
   pendingApprovalsCount: number;
   incrementApprovals: () => void;
   decrementApprovals: () => void;
+  eventTrigger: number;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -24,6 +25,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [wsConnected, setWsConnected] = useState<boolean>(false);
   const [toasts, setToasts] = useState<ToastNotification[]>([]);
   const [pendingApprovalsCount, setPendingApprovalsCount] = useState<number>(0);
+  const [eventTrigger, setEventTrigger] = useState<number>(0);
 
   const addToast = useCallback((toast: Omit<ToastNotification, 'id' | 'timestamp'>) => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -45,7 +47,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
+    const defaultWsUrl = `${protocol}//${window.location.host}/ws`;
+    const wsUrl = (import.meta.env.VITE_WS_URL as string) || defaultWsUrl;
 
     let ws: WebSocket | null = null;
     let reconnectTimeout: any = null;
@@ -79,6 +82,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             } else if (payload.type === 'security_event' && payload.data.status === 'ALLOWED') {
               // Log subtle safe event
             }
+            setEventTrigger((prev) => prev + 1);
           } catch {}
         };
 
@@ -114,6 +118,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         pendingApprovalsCount,
         incrementApprovals,
         decrementApprovals,
+        eventTrigger,
       }}
     >
       {children}

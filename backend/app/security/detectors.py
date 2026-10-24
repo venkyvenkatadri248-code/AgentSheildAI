@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 
 
 class ThreatDetectionResult:
@@ -43,8 +43,8 @@ INDIRECT_INJECTION_PATTERNS = [
 
 # Sensitive Data / PII Patterns
 SENSITIVE_DATA_PATTERNS = [
-    (r"\b(?:\d{4}[ -]?){3}\d{4}\b", "CREDIT_CARD", "CRITICAL", "Payment card number detected"),
-    (r"\b\d{3}-\d{2}-\d{4}\b", "SSN", "CRITICAL", "US Social Security Number detected"),
+    (r"(?<![\w-])(?:\d{4}[ -]?){3}\d{4}(?![\w-])", "CREDIT_CARD", "CRITICAL", "Payment card number detected"),
+    (r"(?<![\w-])\d{3}-\d{2}-\d{4}(?![\w-])", "SSN", "CRITICAL", "US Social Security Number detected"),
     (r"\bAKIA[0-9A-Z]{16}\b", "AWS_ACCESS_KEY", "CRITICAL", "AWS Access Key ID detected"),
     (r"\bAIza[0-9A-Za-z-_]{35}\b", "GOOGLE_API_KEY", "CRITICAL", "Google API Key pattern detected"),
     (r"\bsk-[a-zA-Z0-9]{24,}\b", "API_SECRET_KEY", "CRITICAL", "OpenAI/Platform API Secret key detected"),
@@ -125,6 +125,10 @@ def detect_sensitive_data(payload: Any) -> ThreatDetectionResult:
     if not text:
         return ThreatDetectionResult(False, "", "LOW", "", {})
 
+    # Entity identifiers (UUIDs) are not sensitive card or PII leaks
+    if re.fullmatch(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", text.strip()):
+        return ThreatDetectionResult(False, "", "LOW", "", {})
+
     for pattern, pii_type, severity, reason in SENSITIVE_DATA_PATTERNS:
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
@@ -172,9 +176,9 @@ def detect_path_traversal(file_path: str) -> ThreatDetectionResult:
     return ThreatDetectionResult(False, "", "LOW", "", {})
 
 
-def detect_unsafe_mail_actions(recipient: str, subject: str, body: str) -> ThreatDetectionResult:
+def detect_unsafe_mail_actions(recipient: str, subject: str, body: str, attachments: Optional[List[str]] = None) -> ThreatDetectionResult:
     # Check for broadcast addresses or suspicious recipients
-    unsafe_keywords = ["all@", "everyone@", "company@", "executives@"]
+    unsafe_keywords = ["all@", "everyone@", "company@", "executives@", "broadcast@"]
     for kw in unsafe_keywords:
         if kw in recipient.lower():
             return ThreatDetectionResult(
@@ -189,11 +193,166 @@ def detect_unsafe_mail_actions(recipient: str, subject: str, body: str) -> Threa
     pii_check = detect_sensitive_data(body)
     if pii_check.detected:
         return ThreatDetectionResult(
+                detected=True,
+                category="sensitive_data_exposure",
+                severity="CRITICAL",
+                reason=f"Outbound email contains sensitive data: {pii_check.reason}",
+                evidence=pii_check.evidence
+            )
+
+    # Check recipient for embedded secrets/tokens
+    rec_pii = detect_sensitive_data(recipient)
+    if rec_pii.detected:
+        return ThreatDetectionResult(
             detected=True,
             category="sensitive_data_exposure",
             severity="CRITICAL",
-            reason=f"Outbound email contains sensitive data: {pii_check.reason}",
-            evidence=pii_check.evidence
+            reason=f"Recipient field contains sensitive token or data: {rec_pii.reason}",
+            evidence=rec_pii.evidence
         )
+
+    # Check prohibited attachments
+    if attachments:
+        import os
+        for att in attachments:
+            ext = os.path.splitext(att)[1].lower()
+            if ext in DANGEROUS_EXTENSIONS:
+                return ThreatDetectionResult(
+                    detected=True,
+                    category="dangerous_file_operation",
+                    severity="CRITICAL",
+                    reason=f"Prohibited attachment format '{ext}' in email dispatch",
+                    evidence={"attachment": att, "extension": ext}
+                )
         
     return ThreatDetectionResult(False, "", "LOW", "", {})
+
+
+# SSRF and Restricted Networks Patterns
+SSRF_PATTERNS = [
+    (r"169\.254\.169\.254", "Cloud Instance Metadata Service (IMDS) access attempt"),
+    (r"\b(?:127\.\d{1,3}\.\d{1,3}\.\d{1,3}|localhost|0\.0\.0\.0|\[::1\])\b", "Local loopback / private interface access attempt"),
+    (r"\b10\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", "Private Class A RFC1918 intranet access attempt"),
+    (r"\b192\.168\.\d{1,3}\.\d{1,3}\b", "Private Class C RFC1918 intranet access attempt"),
+    (r"\b172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}\b", "Private Class B RFC1918 intranet access attempt"),
+    (r"(?:\.corp|\.internal|\.local|\.onion)\b", "Internal enterprise / darknet domain access attempt"),
+    (r"https?://[^/]*:[^/]*@", "URL embedded credential exfiltration attempt"),
+]
+
+
+def detect_ssrf_and_restricted_urls(url: str) -> ThreatDetectionResult:
+    if not url:
+        return ThreatDetectionResult(False, "", "LOW", "", {})
+    
+    url_lower = url.lower()
+    for pattern, reason in SSRF_PATTERNS:
+        match = re.search(pattern, url_lower, re.IGNORECASE)
+        if match:
+            return ThreatDetectionResult(
+                detected=True,
+                category="unauthorized_network_access",
+                severity="CRITICAL" if "169.254" in pattern or "127." in pattern else "HIGH",
+                reason=reason,
+                evidence={"url": url, "matched_pattern": match.group(0)}
+            )
+    return ThreatDetectionResult(False, "", "LOW", "", {})
+
+
+# Protected & Security Configuration Files
+PROTECTED_FILES = {
+    ".env", ".env.local", ".env.production", "agentshieldai.db", "config.json",
+    "settings.py", "docker-compose.yml", "id_rsa", "id_ed25519", "authorized_keys"
+}
+
+PROTECTED_PATHS = [
+    r"[\\/]etc[\\/](?:passwd|shadow|sudoers)",
+    r"[\\/]windows[\\/]system32",
+    r"\.git[\\/]",
+    r"\.venv[\\/]",
+]
+
+
+def detect_protected_file_target(file_path: str) -> ThreatDetectionResult:
+    if not file_path:
+        return ThreatDetectionResult(False, "", "LOW", "", {})
+
+    import os
+    basename = os.path.basename(file_path.replace("\\", "/")).lower()
+    if basename in PROTECTED_FILES or basename.endswith(".pem") or basename.endswith(".key"):
+        return ThreatDetectionResult(
+            detected=True,
+            category="unauthorized_file_modification",
+            severity="CRITICAL",
+            reason=f"Modification or access to protected security configuration file '{basename}' is strictly prohibited",
+            evidence={"file_path": file_path, "protected_target": basename}
+        )
+
+    for pattern in PROTECTED_PATHS:
+        if re.search(pattern, file_path, re.IGNORECASE):
+            return ThreatDetectionResult(
+                detected=True,
+                category="unauthorized_file_modification",
+                severity="CRITICAL",
+                reason="Access or modification of sensitive operating system files is prohibited",
+                evidence={"file_path": file_path, "pattern": pattern}
+            )
+
+    return ThreatDetectionResult(False, "", "LOW", "", {})
+
+
+# Prohibited Code Execution Patterns
+PROHIBITED_CODE_PATTERNS = [
+    (r"\b(?:eval|exec)\s*\(", "Dynamic code execution (eval/exec) marker"),
+    (r"\bos\.system\s*\(", "Operating system shell execution marker"),
+    (r"\bsubprocess\.(?:Popen|run|call|check_output)\s*\(", "Subprocess execution marker"),
+    (r"\b__import__\s*\(", "Dynamic module import marker"),
+    (r"\bimport\s+(?:os|sys|subprocess|shutil)\b", "Restricted system module import marker"),
+    (r"\bshutil\.rmtree\s*\(", "Destructive filesystem operation marker"),
+]
+
+
+def detect_prohibited_code_execution(payload: str) -> ThreatDetectionResult:
+    if not payload:
+        return ThreatDetectionResult(False, "", "LOW", "", {})
+
+    for pattern, reason in PROHIBITED_CODE_PATTERNS:
+        match = re.search(pattern, payload, re.IGNORECASE)
+        if match:
+            return ThreatDetectionResult(
+                detected=True,
+                category="prohibited_code_execution",
+                severity="CRITICAL",
+                reason=reason,
+                evidence={"payload_snippet": match.group(0), "pattern": pattern}
+            )
+    return ThreatDetectionResult(False, "", "LOW", "", {})
+
+
+# Unapproved Database Modification Patterns
+UNAPPROVED_DB_PATTERNS = [
+    (r"\bdrop\s+table\b", "DROP TABLE statement detected"),
+    (r"\balter\s+table\b", "ALTER TABLE statement detected"),
+    (r"\btruncate\s+table\b", "TRUNCATE TABLE statement detected"),
+    (r"\bdelete\s+from\b", "DELETE FROM statement detected without authorized transaction"),
+    (r"\bupdate\s+\w+\s+set\b", "Direct UPDATE statement detected in read-only analysis context"),
+    (r";\s*--", "SQL comment truncation sequence detected"),
+    (r"\bunion\s+select\b", "SQL UNION SELECT injection pattern detected"),
+]
+
+
+def detect_unapproved_database_modifications(query: str) -> ThreatDetectionResult:
+    if not query:
+        return ThreatDetectionResult(False, "", "LOW", "", {})
+
+    for pattern, reason in UNAPPROVED_DB_PATTERNS:
+        match = re.search(pattern, query, re.IGNORECASE)
+        if match:
+            return ThreatDetectionResult(
+                detected=True,
+                category="unapproved_database_modification",
+                severity="CRITICAL",
+                reason=reason,
+                evidence={"query_snippet": match.group(0), "pattern": pattern}
+            )
+    return ThreatDetectionResult(False, "", "LOW", "", {})
+

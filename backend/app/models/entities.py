@@ -26,6 +26,7 @@ class User(Base):
     files = relationship("UploadedFile", back_populates="user", cascade="all, delete-orphan")
     alerts = relationship("Alert", back_populates="user")
     approvals = relationship("ApprovalRequest", back_populates="user", foreign_keys="ApprovalRequest.user_id")
+    emails = relationship("EmailMessage", back_populates="user", cascade="all, delete-orphan")
 
 
 class Agent(Base):
@@ -245,3 +246,23 @@ class UploadedFile(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     user = relationship("User", back_populates="files")
+
+
+class EmailMessage(Base):
+    __tablename__ = "email_messages"
+
+    id = Column(String(36), primary_key=True, default=generate_uuid)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    sender = Column(String(255), nullable=False)
+    sender_name = Column(String(255), nullable=True)
+    recipient = Column(String(255), nullable=False)
+    subject = Column(String(500), nullable=False)
+    body = Column(Text, nullable=False)
+    snippet = Column(String(500), nullable=False)
+    is_read = Column(Boolean, default=False, nullable=False)
+    is_starred = Column(Boolean, default=False, nullable=False)
+    mailbox = Column(String(50), default="inbox", nullable=False)  # inbox, sent, drafts, archive, trash
+    received_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="emails")

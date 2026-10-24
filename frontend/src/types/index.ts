@@ -136,6 +136,24 @@ export interface MetricSummary {
   pending_approvals: number;
   total_tasks: number;
   open_alerts: number;
+  prevention_rate?: number;
+}
+
+export interface AgentSummary {
+  id: string;
+  key: string;
+  name: string;
+  icon: string;
+  description: string;
+  is_active: boolean;
+  allowed_tools: string[];
+  total_tasks: number;
+  blocked_actions: number;
+  pending_approvals: number;
+  open_alerts: number;
+  total_events: number;
+  prevention_rate: number;
+  health_status: 'SECURE' | 'PENDING_APPROVAL' | 'ATTENTION';
 }
 
 export interface DashboardMetrics {
@@ -145,6 +163,27 @@ export interface DashboardMetrics {
   severity_distribution: { severity: string; count: number }[];
   agent_activity: { agent: string; activity: number }[];
   recent_activity: any[];
+  selected_agent?: {
+    id: string;
+    key: string;
+    name: string;
+    icon: string;
+    description: string;
+    is_active: boolean;
+    allowed_tools: string[];
+    system_prompt?: string;
+  } | null;
+  agent_summaries: AgentSummary[];
+  agent_comparison: {
+    agent: string;
+    agent_key: string;
+    allowed: number;
+    blocked: number;
+    pending: number;
+    total: number;
+  }[];
+  tool_usage_breakdown: { tool: string; count: number }[];
+  threat_category_breakdown: { category: string; count: number; raw_category: string }[];
 }
 
 export interface UploadedFileItem {

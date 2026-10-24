@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     
     # Google Gemini Settings
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-3.8-flash"
+    GEMINI_MODEL: str = "gemini-3.5-flash"
     
     # CORS & Security
     FRONTEND_ORIGIN: str = "http://localhost:5173"
@@ -31,8 +31,9 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins(self) -> List[str]:
-        origins = [self.FRONTEND_ORIGIN, "http://localhost:5173", "http://127.0.0.1:5173"]
-        return list(set(filter(None, origins)))
+        raw = [o.strip() for o in self.FRONTEND_ORIGIN.split(",") if o.strip()]
+        defaults = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost", "http://localhost:80", "http://127.0.0.1:80"]
+        return list(set(raw + defaults))
 
     @property
     def allowed_file_extensions(self) -> List[str]:

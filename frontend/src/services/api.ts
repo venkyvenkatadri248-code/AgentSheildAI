@@ -3,7 +3,7 @@ import {
   ApprovalRequest, DashboardMetrics, UploadedFileItem
 } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string) || '/api';
 
 export function getToken(): string | null {
   return localStorage.getItem('agentshield_token');
@@ -113,6 +113,13 @@ export const api = {
     });
   },
 
+  async clearAllConversations(agent_key?: string): Promise<void> {
+    const query = agent_key ? `?agent_key=${agent_key}` : '';
+    return request(`/conversations${query}`, {
+      method: 'DELETE',
+    });
+  },
+
   // Streaming Chat with Gemini & Security Gateway
   async *streamMessage(conversationId: string, content: string, signal?: AbortSignal) {
     const token = getToken();
@@ -178,8 +185,9 @@ export const api = {
   },
 
   // Dashboard
-  async getDashboardMetrics(): Promise<DashboardMetrics> {
-    return request('/dashboard/metrics');
+  async getDashboardMetrics(agentIdOrKey?: string): Promise<DashboardMetrics> {
+    const query = agentIdOrKey && agentIdOrKey !== 'all' ? `?agent_id=${encodeURIComponent(agentIdOrKey)}` : '';
+    return request(`/dashboard/metrics${query}`);
   },
 
   // Alerts

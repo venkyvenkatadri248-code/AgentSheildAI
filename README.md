@@ -159,6 +159,9 @@ Services will be exposed on:
 - Backend API: `http://localhost:8000`
 - PostgreSQL: `localhost:5432`
 
+> 📘 For cloud hosting on **Vercel, Render, Railway, AWS EC2, or Linux Bare-Metal**, see the comprehensive **[Production Deployment & Hosting Guide](file:///c:/Users/Q/Desktop/M.Tech/ShieldAI/DEPLOYMENT.md)**.
+
+
 ---
 
 ## 🧪 Automated Testing

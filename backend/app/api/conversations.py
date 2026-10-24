@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.database.session import get_db, SessionLocal
-from app.models.entities import Conversation, Message, Agent, User
+from app.models.entities import Conversation, Message, Agent, User, SecurityEvent
 from app.schemas.api_schemas import (
     ConversationCreate, ConversationUpdate, ConversationResponse, MessageResponse, MessageSubmitRequest
 )
@@ -89,8 +89,30 @@ def delete_conversation(
     conv = db.query(Conversation).filter(Conversation.id == id, Conversation.user_id == current_user.id).first()
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
+    db.query(SecurityEvent).filter(SecurityEvent.conversation_id == id).update({"conversation_id": None})
     db.delete(conv)
     db.commit()
+    return None
+
+
+@router.delete("", status_code=status.HTTP_204_NO_CONTENT)
+def clear_all_conversations(
+    agent_key: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    query = db.query(Conversation).filter(Conversation.user_id == current_user.id)
+    if agent_key:
+        query = query.join(Agent).filter(Agent.key == agent_key)
+    convs = query.all()
+    conv_ids = [c.id for c in convs]
+    if conv_ids:
+        db.query(SecurityEvent).filter(SecurityEvent.conversation_id.in_(conv_ids)).update(
+            {"conversation_id": None}, synchronize_session=False
+        )
+        for c in convs:
+            db.delete(c)
+        db.commit()
     return None
 
 
