@@ -9,7 +9,8 @@ import google.generativeai as genai
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models.entities import Agent, Conversation, Message, User, ToolCall
+from app.models.entities import Agent, Conversation, Message, User, ToolCall, SecurityEvent
+from app.services.event_broadcaster import broadcaster
 from app.security.gateway import CentralSecurityGateway
 from app.agents.agent_tools import execute_tool
 from app.security.detectors import detect_direct_prompt_injection
@@ -592,6 +593,8 @@ class GeminiService:
         # -------------------------------------------------------------
         # STEP 3: Conversational Prompt (Gemini LLM Stream with Graceful Fallback)
         # -------------------------------------------------------------
+        recorded = False
+        accumulated_text = ""
         if cls.is_configured():
             try:
                 genai.configure(api_key=settings.GEMINI_API_KEY)
@@ -625,36 +628,72 @@ class GeminiService:
                         await asyncio.sleep(0.01)
 
                 if accumulated_text.strip():
-                    yield {
-                        "event": "done",
-                        "data": {
-                            "status": "COMPLETED",
-                            "tokens": len(accumulated_text.split()),
-                            "full_content": accumulated_text
-                        }
-                    }
-                    return
+                    recorded = True
             except Exception as e:
                 err_str = str(e)
                 logger.info(f"Gemini API streaming note ({err_str}), providing conversational agent reasoning.")
 
-        # Real Chatbot Conversational Response
-        from app.services.agent_conversational_engine import AgentConversationalEngine
-        response_text = AgentConversationalEngine.generate_response(agent, user_message_content)
+        if not recorded:
+            # Real Chatbot Conversational Response
+            from app.services.agent_conversational_engine import AgentConversationalEngine
+            response_text = AgentConversationalEngine.generate_response(agent, user_message_content)
 
-        # Stream chunk-by-chunk with realistic typing rhythm so it feels like a real chat bot
-        chunk_size = 12
-        words = response_text.split(" ")
-        for i in range(0, len(words), chunk_size):
-            chunk_str = " ".join(words[i:i+chunk_size]) + (" " if i + chunk_size < len(words) else "")
-            yield {"event": "chunk", "data": {"text": chunk_str}}
-            await asyncio.sleep(0.035)
+            # Stream chunk-by-chunk with realistic typing rhythm so it feels like a real chat bot
+            chunk_size = 12
+            words = response_text.split(" ")
+            for i in range(0, len(words), chunk_size):
+                chunk_str = " ".join(words[i:i+chunk_size]) + (" " if i + chunk_size < len(words) else "")
+                yield {"event": "chunk", "data": {"text": chunk_str}}
+                await asyncio.sleep(0.035)
+
+            accumulated_text = response_text
+
+        # Record this successful agent interaction in database to update Dashboard live!
+        try:
+            decision_id = str(uuid.uuid4())
+            event = SecurityEvent(
+                decision_id=decision_id,
+                actor_id=actor.id,
+                agent_id=agent.id,
+                conversation_id=conversation.id,
+                tool_name="conversational_interaction",
+                risk_category="authorized_operation",
+                severity="LOW",
+                lifecycle_state="TASK_COMPLETED",
+                evidence={"query_preview": user_message_content[:120], "agent": agent.key},
+                explanation=f"Clean conversational query verified and safely fulfilled by {agent.name}.",
+                execution_prevented=False,
+                verification_status="VERIFIED"
+            )
+            db.add(event)
+
+            tool_call = ToolCall(
+                conversation_id=conversation.id,
+                agent_id=agent.id,
+                tool_name="conversational_interaction",
+                arguments={"query": user_message_content[:200]},
+                status="EXECUTED",
+                executed_at=datetime.utcnow()
+            )
+            db.add(tool_call)
+            db.commit()
+
+            # Broadcast live telemetry event
+            broadcaster.broadcast_sync("security_event", {
+                "decision_id": decision_id,
+                "status": "ALLOWED",
+                "agent": agent.name,
+                "tool": "conversational_interaction",
+                "severity": "LOW"
+            })
+        except Exception as e:
+            logger.error(f"Error persisting conversational agent telemetry: {e}")
 
         yield {
             "event": "done",
             "data": {
                 "status": "COMPLETED",
-                "tokens": len(response_text.split()),
-                "full_content": response_text
+                "tokens": len(accumulated_text.split()),
+                "full_content": accumulated_text
             }
         }
