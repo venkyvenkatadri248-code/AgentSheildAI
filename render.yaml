@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: agentshield-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_NAME
+        value: AgentShieldAI
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTH_SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
+      - key: FRONTEND_ORIGIN
+        sync: false
