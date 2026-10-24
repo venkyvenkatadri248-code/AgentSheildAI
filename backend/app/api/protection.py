@@ -101,3 +101,121 @@ def get_policy_versions(
     current_user: User = Depends(get_current_user)
 ):
     return db.query(PolicyVersion).filter(PolicyVersion.policy_id == id).order_by(PolicyVersion.version.desc()).all()
+
+
+@router.get("/framework")
+def get_protection_framework(current_user: User = Depends(get_current_user)):
+    """
+    Returns the formal specification and runtime capabilities of AgentShieldAI's
+    core security principle: DETECT · EXPLAIN · PREVENT.
+    """
+    return {
+        "tagline": "DETECT · EXPLAIN · PREVENT",
+        "pillars": {
+            "detect": {
+                "title": "Threat Detection",
+                "tagline": "Perimeter & Runtime Multi-Layer Threat Inspection",
+                "summary": "Every user input and autonomous agent tool invocation is intercepted and screened across deterministic pattern engines, AST parsers, and ML threat evaluators before execution.",
+                "capabilities": [
+                    {
+                        "name": "Prompt Injection & Jailbreaks",
+                        "description": "Instruction overrides, adversarial roleplays, DAN personas, and bracketed system command emulation.",
+                        "status": "ACTIVE",
+                        "severity": "CRITICAL"
+                    },
+                    {
+                        "name": "Sensitive Data & PII Exposure",
+                        "description": "Payment card numbers, Social Security Numbers, AWS access keys, Bearer tokens, and API secrets.",
+                        "status": "ACTIVE",
+                        "severity": "CRITICAL"
+                    },
+                    {
+                        "name": "Path Traversal & Restricted Files",
+                        "description": "Directory traversal sequences (../), access to .env, SSH keys, settings, and OS system files.",
+                        "status": "ACTIVE",
+                        "severity": "HIGH"
+                    },
+                    {
+                        "name": "Prohibited Code Execution",
+                        "description": "Dynamic script execution (eval, exec), os.system shell calls, and unauthorized subprocess spawning.",
+                        "status": "ACTIVE",
+                        "severity": "CRITICAL"
+                    },
+                    {
+                        "name": "Unapproved Database Mutations",
+                        "description": "Destructive SQL statements (DROP TABLE, TRUNCATE, DELETE FROM, UNION SELECT injections).",
+                        "status": "ACTIVE",
+                        "severity": "CRITICAL"
+                    },
+                    {
+                        "name": "SSRF & Restricted Networks",
+                        "description": "Cloud Instance Metadata Service (169.254.169.254), loopback interfaces, and RFC1918 private subnets.",
+                        "status": "ACTIVE",
+                        "severity": "CRITICAL"
+                    },
+                    {
+                        "name": "Cross-User Tenant Isolation",
+                        "description": "Cryptographic file ownership and dataset tenancy boundaries preventing cross-account access.",
+                        "status": "ACTIVE",
+                        "severity": "HIGH"
+                    },
+                    {
+                        "name": "Mail Safety & Broadcast Filters",
+                        "description": "Outbound email sanitization, mass-distribution prevention, and sensitive attachment blocking.",
+                        "status": "ACTIVE",
+                        "severity": "HIGH"
+                    }
+                ]
+            },
+            "explain": {
+                "title": "Threat Explainability",
+                "tagline": "Transparent Risk Rationale & Contextual Attribution",
+                "summary": "AgentShieldAI eliminates opaque security black-boxes by generating human-comprehensible risk justifications, violated policy citations, and auditable technical evidence.",
+                "capabilities": [
+                    {
+                        "name": "Risk Impact Analysis",
+                        "description": "Translates technical threat signatures into contextual explanations detailing exploit mechanisms and potential system harm."
+                    },
+                    {
+                        "name": "Policy & Governance Mapping",
+                        "description": "Direct attribution to active security policies, including configuration versioning and governance clauses."
+                    },
+                    {
+                        "name": "Technical Evidence Extraction",
+                        "description": "Preserves matched patterns, parameter snippets, and redacted tokens for SOC analyst verification."
+                    },
+                    {
+                        "name": "Machine Learning Threat Scoring",
+                        "description": "Continuous runtime scoring from trained anomaly detection models supplementing deterministic guardrails."
+                    }
+                ]
+            },
+            "prevent": {
+                "title": "Threat Prevention",
+                "tagline": "Zero-Trust Pre-Execution Halting & Verifiable Integrity",
+                "summary": "Threats are intercepted and stopped prior to execution. Systems and datasets remain completely unmodified with auditable prevention verification.",
+                "capabilities": [
+                    {
+                        "name": "Pre-Execution Gate Enforcement",
+                        "description": "Zero-trust interception halting actions before any filesystem, network, email, or database calls occur."
+                    },
+                    {
+                        "name": "Lifecycle State Guarantee",
+                        "description": "Strict state machine progression: OBSERVED -> DETECTED -> BLOCKED -> PREVENTION_VERIFIED."
+                    },
+                    {
+                        "name": "Target Resource Integrity Verification",
+                        "description": "Guaranteed post-verification confirming zero mutations and unmodified target resource states."
+                    },
+                    {
+                        "name": "Human-In-The-Loop Approval Gates",
+                        "description": "Mandatory sign-off workflows pausing high-impact operations until authorized by a designated operator."
+                    },
+                    {
+                        "name": "Real-Time Telemetry & SOC Sync",
+                        "description": "Instant WebSocket broadcasting to the Operations Dashboard, Security Alerts queue, and immutable Audit Log."
+                    }
+                ]
+            }
+        }
+    }

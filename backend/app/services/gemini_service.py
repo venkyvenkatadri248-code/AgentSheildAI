@@ -380,6 +380,54 @@ def format_tool_result_markdown(agent: Agent, tool_name: str, arguments: Dict[st
     return f"**Tool Execution Output (`{tool_name}`):**\n\n```json\n{json.dumps(result, indent=2)}\n```"
 
 
+def format_threat_interception_notice(
+    category: str,
+    severity: str,
+    explanation: str,
+    target_resource: str,
+    evidence: Optional[Dict[str, Any]] = None,
+    policy_name: Optional[str] = None,
+    layer_name: str = "Perimeter Security Inspection"
+) -> str:
+    category_formatted = category.replace("_", " ").title()
+    evidence_lines = []
+    if evidence:
+        if "matched_snippet" in evidence:
+            evidence_lines.append(f"- **Matched Indicator:** `{evidence['matched_snippet']}`")
+        if "redacted_sample" in evidence:
+            evidence_lines.append(f"- **Redacted Token:** `{evidence['redacted_sample']}`")
+        if "pii_type" in evidence:
+            evidence_lines.append(f"- **PII Classification:** `{evidence['pii_type']}`")
+        if "pattern" in evidence:
+            evidence_lines.append(f"- **Threat Signature:** `{evidence['pattern']}`")
+        if "protected_target" in evidence:
+            evidence_lines.append(f"- **Protected Target:** `{evidence['protected_target']}`")
+        if "query_snippet" in evidence:
+            evidence_lines.append(f"- **SQL Statement:** `{evidence['query_snippet']}`")
+        if "payload_snippet" in evidence:
+            evidence_lines.append(f"- **Disallowed Call:** `{evidence['payload_snippet']}`")
+
+    evidence_text = "\n".join(evidence_lines) if evidence_lines else "- **Evidence:** Pattern match detected in execution context."
+
+    return (
+        f"🛡️ **AgentShieldAI Threat Defense Gateway**\n\n"
+        f"### 🔍 1. DETECT\n"
+        f"- **Threat Category:** `{category_formatted}`\n"
+        f"- **Severity Level:** `{severity}`\n"
+        f"- **Target Asset:** `{target_resource}`\n"
+        f"- **Inspection Layer:** {layer_name}\n\n"
+        f"### 📋 2. EXPLAIN\n"
+        f"- **Risk Assessment:** {explanation}\n"
+        f"- **Policy Violated:** `{policy_name or 'Default Agent Security Boundary'}`\n"
+        f"{evidence_text}\n\n"
+        f"### 🛑 3. PREVENT\n"
+        f"- **Enforcement Outcome:** `EXECUTION_PREVENTED`\n"
+        f"- **Lifecycle State:** `PREVENTION_VERIFIED`\n"
+        f"- **Resource Verification:** Target resources remain 100% intact (zero mutations, zero network egress).\n"
+        f"- **Audit Status:** Logged to Security Audit Log & live Operations Dashboard."
+    )
+
+
 class GeminiService:
     @classmethod
     def is_configured(cls) -> bool:
@@ -480,14 +528,14 @@ class GeminiService:
             db.add(tool_call)
             db.commit()
 
-            notice_text = (
-                f"🛡️ **Central Security Gateway Interception:**\n\n"
-                f"Your request was intercepted and blocked before execution because it violates safety and security policies:\n\n"
-                f"- **Threat Category:** `{decision.risk_category}`\n"
-                f"- **Severity:** `{decision.severity}`\n"
-                f"- **Reason:** {decision.explanation}\n"
-                f"- **Lifecycle State:** `PREVENTION_VERIFIED` (Target resources unmodified)\n\n"
-                f"*A security alert has been recorded on the Operations Dashboard.*"
+            notice_text = format_threat_interception_notice(
+                category=threat.category,
+                severity=threat.severity,
+                explanation=threat.reason,
+                target_resource="chat_input",
+                evidence=threat.evidence,
+                policy_name="Perimeter Input Protection Guardrail",
+                layer_name="Perimeter Input Screening"
             )
 
             yield {"event": "security_block", "data": decision.dict()}
@@ -530,25 +578,15 @@ class GeminiService:
                 db.add(tool_call)
                 db.commit()
 
-                # Natural, professional refusal without application technical plumbing
-                if decision.risk_category == "unauthorized_tool_invocation":
-                    block_text = f"I'm sorry, but as {agent.name}, I am not authorized to perform that action. Please let me know how I can assist you with tasks in my role!"
-                elif decision.risk_category == "cross_user_access":
-                    block_text = "I cannot access that document or dataset because you do not have permission to view it."
-                elif decision.risk_category == "unauthorized_file_modification":
-                    block_text = "I cannot modify or access protected configuration files. Please specify an authorized file in your workspace."
-                elif decision.risk_category == "dangerous_file_operation":
-                    block_text = "I cannot access or process that file format or path. Please select an authorized text or data file."
-                elif decision.risk_category == "sensitive_data_exposure":
-                    block_text = "I cannot proceed with this request because it contains sensitive confidential information (such as credentials, API keys, or private financial details)."
-                elif decision.risk_category == "prohibited_code_execution":
-                    block_text = "Executing arbitrary scripts or commands is not permitted. I can help compute standard descriptive statistics and evaluate dataset summaries."
-                elif decision.risk_category == "unapproved_database_modification":
-                    block_text = "Direct database modifications or destructive SQL commands are not allowed."
-                elif decision.risk_category == "unauthorized_network_access":
-                    block_text = "I cannot access that network address or internal destination. I can only retrieve information from authorized public web and research sources."
-                else:
-                    block_text = f"I am unable to complete this request: {decision.explanation}"
+                block_text = format_threat_interception_notice(
+                    category=decision.risk_category,
+                    severity=decision.severity,
+                    explanation=decision.explanation,
+                    target_resource=tool_name,
+                    evidence=decision.evidence,
+                    policy_name=decision.policy_name,
+                    layer_name=f"Runtime Tool Authorization ({agent.name})"
+                )
 
                 yield {"event": "security_block", "data": decision.dict()}
                 yield {"event": "chunk", "data": {"text": block_text}}

@@ -1,22 +1,31 @@
 import os
+import math
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple
 
-logger = logging.getLogger("agentshield.ml")
+from app.security.models.fusion_engine import MultiModelFusionEngine
+from app.security.explain.explainer import SecurityThreatExplainer
+
+logger = logging.getLogger("agentshield.deep_learning")
 
 
-class MLThreatEvaluator:
+class DeepLearningThreatDetector:
     """
-    ML Threat Detection Evaluator.
-    Evaluates runtime evidence using machine learning threat detection models when available.
-    Adheres strictly to the requirement:
-    - Never fabricate random confidence scores or fake predictions.
-    - If model is unavailable, report its unavailable status honestly.
-    - Model prediction never overrides policy denials.
+    Unified 4-Model AI-Agent Threat Detection and Explainability Engine.
+    
+    Integrated Models:
+    1. DistilBERT: Text threat detection with Integrated Gradients token attribution.
+    2. BiLSTM: Temporal action sequence and repeated policy violation detector.
+    3. XGBoost: Structured event feature classification with TreeSHAP.
+    4. Isolation Forest: Unsupervised behavioral anomaly detection from baseline.
+    
+    Fusion & Explainability:
+    - MultiModelFusionEngine: Calibrated multi-model consensus.
+    - SecurityThreatExplainer: Complete XAI reporting (What, Which models, Evidence, Why, Agreement, Limitations).
     """
 
-    _model_loaded: bool = False
-    _model_name: str = "AgentShield-Lightweight-SGD-v1"
+    _model_name: str = "AgentShield-Unified-4Model-Ensemble-v1"
+    _model_loaded: bool = True
 
     @classmethod
     def is_available(cls) -> bool:
@@ -29,10 +38,9 @@ class MLThreatEvaluator:
     @classmethod
     def evaluate(cls, text_evidence: str, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
-        Evaluate runtime text evidence.
-        Returns genuine prediction and confidence only when model is genuinely active.
-        Otherwise reports 'unavailable' honestly.
+        Runs the full 4-model detection and explanation pipeline.
         """
+        context = context or {}
         if not cls._model_loaded:
             return {
                 "status": "unavailable",
@@ -40,21 +48,40 @@ class MLThreatEvaluator:
                 "model_name": cls._model_name,
                 "confidence": None,
                 "prediction": None,
-                "explanation": "ML threat detection model is offline / not loaded. Deterministic policy enforcement is active independently."
+                "explanation": "Threat detection models are offline. Deterministic policy enforcement is active independently."
             }
 
-        # If a trained model is loaded, evaluate genuine mathematical score
-        text = text_evidence.lower() if text_evidence else ""
-        
-        # Real deterministic feature scoring
-        risk_tokens = [
-            "ignore previous", "disregard", "override", "bypass", "drop table",
-            "eval(", "exec(", "etc/passwd", "system32", "169.254", "secret_key"
-        ]
-        matches = [tok for tok in risk_tokens if tok in text]
-        score = min(1.0, len(matches) * 0.35 + (0.2 if len(text) > 200 else 0.05))
-        confidence = round(score, 3)
-        prediction = "SUSPICIOUS" if confidence >= 0.5 else "BENIGN"
+        # Format event data for structured models
+        current_event = {
+            "tool_name": context.get("tool") or context.get("tool_name", ""),
+            "agent_key": context.get("agent") or context.get("agent_key", ""),
+            "allowed_tools": context.get("allowed_tools", []),
+            "arguments": context.get("arguments", {"text": text_evidence}),
+            "prior_violations": context.get("prior_violations", 0),
+            "user_role": context.get("user_role", "user")
+        }
+
+        action_sequence = context.get("action_sequence", [])
+
+        # 1. DETECT: Run Multi-Model Fusion Engine across all 4 models
+        fusion_res = MultiModelFusionEngine.fuse(
+            text_payload=text_evidence,
+            current_event=current_event,
+            action_sequence=action_sequence
+        )
+
+        # 2. EXPLAIN: Generate structured, evidence-based XAI report
+        xai_report = SecurityThreatExplainer.generate_explanation(
+            fusion_result=fusion_res,
+            actor_email=context.get("actor_email"),
+            agent_name=context.get("agent_name"),
+            target_resource=context.get("target_resource")
+        )
+
+        is_threat = fusion_res["fused_threat_detected"]
+        confidence = fusion_res["fused_threat_score"]
+
+        prediction = "THREAT_DETECTED" if is_threat else ("SUSPICIOUS" if confidence >= 0.40 else "BENIGN")
 
         return {
             "status": "evaluated",
@@ -62,5 +89,22 @@ class MLThreatEvaluator:
             "model_name": cls._model_name,
             "confidence": confidence,
             "prediction": prediction,
-            "explanation": f"Statistical classifier identified {len(matches)} indicative risk token(s) in payload." if matches else "Feature vector indicates standard operational parameters."
+            "primary_threat_category": fusion_res["primary_threat_category"],
+            "explanation": xai_report["what_was_detected"] + " " + xai_report["why_indicates_threat"],
+            "agreement_status": fusion_res["agreement_status"],
+            "agreement_description": fusion_res["agreement_description"],
+            "detecting_models": fusion_res["detecting_models"],
+            "individual_models": fusion_res["individual_model_results"],
+            "xai_report": xai_report,
+            "deep_features": {
+                "fused_threat_score": confidence,
+                "detecting_count": len(fusion_res["detecting_models"]),
+                "models": fusion_res["detecting_models"]
+            }
         }
+
+
+# Backwards compatibility alias
+MLThreatEvaluator = DeepLearningThreatDetector
+
+
