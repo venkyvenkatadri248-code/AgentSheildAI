@@ -190,6 +190,10 @@ export const api = {
     return request(`/dashboard/metrics${query}`);
   },
 
+  async resetTelemetry(): Promise<{ status: string; message: string }> {
+    return request('/dashboard/reset-telemetry', { method: 'POST' });
+  },
+
   // Alerts
   async getAlerts(params: { severity?: string; status?: string; search?: string } = {}): Promise<Alert[]> {
     const query = new URLSearchParams();

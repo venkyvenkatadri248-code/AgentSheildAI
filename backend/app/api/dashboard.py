@@ -268,3 +268,24 @@ def get_dashboard_metrics(
         tool_usage_breakdown=tool_usage_breakdown,
         threat_category_breakdown=threat_category_breakdown
     )
+
+
+@router.post("/reset-telemetry")
+def reset_telemetry(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Clears all recorded telemetry (events, alerts, tool calls, approval requests)
+    so the dashboard resets to clean 0s and tracks strictly new agent actions.
+    """
+    db.query(Alert).delete(synchronize_session=False)
+    db.query(ApprovalRequest).delete(synchronize_session=False)
+    db.query(SecurityEvent).delete(synchronize_session=False)
+    db.query(ToolCall).delete(synchronize_session=False)
+    db.commit()
+    return {
+        "status": "success",
+        "message": "Telemetry reset successfully. Dashboard will update strictly based on new agent actions."
+    }
+

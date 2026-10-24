@@ -17,7 +17,8 @@ import {
   Filter,
   Sparkles,
   Lock,
-  ChevronRight
+  ChevronRight,
+  RotateCcw
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -37,6 +38,7 @@ export const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isResetting, setIsResetting] = useState<boolean>(false);
 
   const fetchMetrics = async (agentKey = selectedAgentKey) => {
     setError(null);
@@ -48,6 +50,21 @@ export const DashboardPage: React.FC = () => {
       setError(err.message || 'Failed to load dashboard metrics');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetTelemetry = async () => {
+    if (!window.confirm("Reset all dashboard metrics to 0? The dashboard will update strictly based on new live actions by agents.")) {
+      return;
+    }
+    setIsResetting(true);
+    try {
+      await api.resetTelemetry();
+      await fetchMetrics(selectedAgentKey);
+    } catch (e: any) {
+      alert("Failed to reset telemetry: " + (e.message || "Unknown error"));
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -192,6 +209,16 @@ export const DashboardPage: React.FC = () => {
           >
             <RefreshCw className={`w-3.5 h-3.5 text-purple-400 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
+          </button>
+
+          <button
+            onClick={handleResetTelemetry}
+            disabled={isResetting}
+            title="Reset telemetry to 0 so the dashboard only updates as agents take actions"
+            className="flex items-center space-x-1.5 px-3 py-2 bg-slate-900/90 hover:bg-red-950/40 border border-slate-700/80 hover:border-red-500/40 rounded-xl text-xs font-medium text-slate-400 hover:text-red-300 transition-colors cursor-pointer"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin text-red-400' : 'text-slate-500'}`} />
+            <span>Reset to 0</span>
           </button>
 
           <Link

