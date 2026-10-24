@@ -1,0 +1,38 @@
+{
+  "arg_character_length": {
+    "mean": 127.77,
+    "std": 47.71,
+    "min": 10.0,
+    "max": 245.09
+  },
+  "argument_keys_count": {
+    "mean": 2.07,
+    "std": 0.67,
+    "min": 1.0,
+    "max": 4.0
+  },
+  "path_depth_levels": {
+    "mean": 1.23,
+    "std": 0.43,
+    "min": 1.0,
+    "max": 3.0
+  },
+  "special_character_density": {
+    "mean": 0.04,
+    "std": 0.02,
+    "min": 0.01,
+    "max": 0.1
+  },
+  "inter_request_interval_s": {
+    "mean": 15.03,
+    "std": 7.69,
+    "min": 2.0,
+    "max": 44.82
+  },
+  "entropy_shannon": {
+    "mean": 3.46,
+    "std": 0.43,
+    "min": 2.36,
+    "max": 4.5
+  }
+}

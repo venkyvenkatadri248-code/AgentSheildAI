@@ -71,6 +71,23 @@ class DistilBERTThreatDetector:
         "avg_latency_ms": 1.85,
     }
 
+    _weights_loaded: bool = False
+
+    @classmethod
+    def load_trained_weights(cls):
+        if cls._weights_loaded:
+            return
+        import os, json
+        weights_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "weights", "distilbert_weights.json"))
+        if os.path.exists(weights_file):
+            try:
+                with open(weights_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    cls.SECURITY_VOCAB_WEIGHTS.update({k: tuple(v) for k, v in data.items()})
+                cls._weights_loaded = True
+            except Exception:
+                pass
+
     @classmethod
     def get_metrics(cls) -> Dict[str, Any]:
         """Returns actual empirical evaluation metrics."""
@@ -126,6 +143,7 @@ class DistilBERTThreatDetector:
 
     @classmethod
     def evaluate(cls, text: str) -> Dict[str, Any]:
+        cls.load_trained_weights()
         """
         Runs DistilBERT threat detection on text input with token attribution.
         """

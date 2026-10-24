@@ -44,6 +44,26 @@ class IsolationForestAnomalyDetector:
         "avg_latency_ms": 1.15,
     }
 
+    _weights_loaded: bool = False
+
+    @classmethod
+    def load_trained_weights(cls):
+        if cls._weights_loaded:
+            return
+        import os, json
+        weights_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "weights", "isolation_forest_model.json"))
+        if os.path.exists(weights_file):
+            try:
+                with open(weights_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    for k, v in data.items():
+                        if k in cls.LEARNED_BASELINE_DISTRIBUTION:
+                            cls.LEARNED_BASELINE_DISTRIBUTION[k]["mean"] = v.get("mean", cls.LEARNED_BASELINE_DISTRIBUTION[k]["mean"])
+                            cls.LEARNED_BASELINE_DISTRIBUTION[k]["std"] = v.get("std", cls.LEARNED_BASELINE_DISTRIBUTION[k]["std"])
+                cls._weights_loaded = True
+            except Exception:
+                pass
+
     @classmethod
     def get_metrics(cls) -> Dict[str, Any]:
         """Returns actual empirical evaluation metrics."""
@@ -101,6 +121,7 @@ class IsolationForestAnomalyDetector:
 
     @classmethod
     def evaluate(cls, event: Dict[str, Any]) -> Dict[str, Any]:
+        cls.load_trained_weights()
         """
         Evaluates event behavioral profile against learned baseline.
         Reports anomaly score and deviations without treating score as attack probability.

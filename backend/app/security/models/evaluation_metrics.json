@@ -1,62 +1,62 @@
 {
   "DistilBERT": {
-    "tp": 12,
+    "tp": 28,
     "fp": 0,
-    "tn": 15,
+    "tn": 29,
     "fn": 3,
-    "total_samples": 30,
+    "total_test_samples": 60,
     "precision": 1.0,
-    "recall": 0.8,
-    "f1_score": 0.8889,
+    "recall": 0.9032,
+    "f1_score": 0.9492,
     "false_positive_rate": 0.0,
-    "avg_latency_ms": 0.043
+    "avg_latency_ms": 0.008
   },
   "BiLSTM": {
-    "tp": 5,
-    "fp": 0,
-    "tn": 5,
+    "tp": 25,
+    "fp": 3,
+    "tn": 17,
     "fn": 0,
-    "total_samples": 10,
+    "total_test_samples": 45,
+    "precision": 0.8929,
+    "recall": 1.0,
+    "f1_score": 0.9434,
+    "false_positive_rate": 0.15,
+    "avg_latency_ms": 0.285
+  },
+  "XGBoost": {
+    "tp": 31,
+    "fp": 0,
+    "tn": 29,
+    "fn": 0,
+    "total_test_samples": 60,
     "precision": 1.0,
     "recall": 1.0,
     "f1_score": 1.0,
     "false_positive_rate": 0.0,
-    "avg_latency_ms": 0.012
-  },
-  "XGBoost": {
-    "tp": 4,
-    "fp": 0,
-    "tn": 5,
-    "fn": 1,
-    "total_samples": 10,
-    "precision": 1.0,
-    "recall": 0.8,
-    "f1_score": 0.8889,
-    "false_positive_rate": 0.0,
-    "avg_latency_ms": 0.022
+    "avg_latency_ms": 0.261
   },
   "IsolationForest": {
-    "tp": 3,
-    "fp": 3,
-    "tn": 1,
+    "tp": 17,
+    "fp": 73,
+    "tn": 0,
     "fn": 0,
-    "total_samples": 7,
-    "precision": 0.5,
+    "total_test_samples": 90,
+    "precision": 0.1889,
     "recall": 1.0,
-    "f1_score": 0.6667,
-    "false_positive_rate": 0.75,
-    "avg_latency_ms": 0.241
+    "f1_score": 0.3178,
+    "false_positive_rate": 1.0,
+    "avg_latency_ms": 0.182
   },
   "MultiModelFusion": {
     "tp": 3,
     "fp": 0,
-    "tn": 2,
+    "tn": 3,
     "fn": 0,
-    "total_samples": 5,
+    "total_test_samples": 6,
     "precision": 1.0,
     "recall": 1.0,
     "f1_score": 1.0,
     "false_positive_rate": 0.0,
-    "avg_latency_ms": 0.091
+    "avg_latency_ms": 2.477
   }
 }

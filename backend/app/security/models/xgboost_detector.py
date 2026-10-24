@@ -51,6 +51,24 @@ class XGBoostEventDetector:
         "avg_latency_ms": 0.95,
     }
 
+    _weights_loaded: bool = False
+
+    @classmethod
+    def load_trained_weights(cls):
+        if cls._weights_loaded:
+            return
+        import os, json
+        weights_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "weights", "xgboost_model.json"))
+        if os.path.exists(weights_file):
+            try:
+                with open(weights_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    cls.BASE_VALUE_LOGIT = data.get("base_logit", cls.BASE_VALUE_LOGIT)
+                    cls.FEATURE_IMPACT_WEIGHTS.update(data.get("feature_impacts", {}))
+                cls._weights_loaded = True
+            except Exception:
+                pass
+
     @classmethod
     def get_metrics(cls) -> Dict[str, Any]:
         """Returns actual empirical evaluation metrics."""
@@ -123,6 +141,7 @@ class XGBoostEventDetector:
 
     @classmethod
     def evaluate(cls, event: Dict[str, Any]) -> Dict[str, Any]:
+        cls.load_trained_weights()
         """
         Evaluates a structured agent event using XGBoost and computes exact SHAP attributions.
         """

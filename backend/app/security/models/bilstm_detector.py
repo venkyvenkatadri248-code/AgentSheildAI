@@ -56,6 +56,27 @@ class BiLSTMSequenceDetector:
         "avg_latency_ms": 1.45,
     }
 
+    _weights_loaded: bool = False
+
+    @classmethod
+    def load_trained_weights(cls):
+        if cls._weights_loaded:
+            return
+        import os, json
+        weights_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "weights", "bilstm_weights.json"))
+        if os.path.exists(weights_file):
+            try:
+                with open(weights_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    cls.ACTION_BASE_SEVERITY.update(data.get("action_severity", {}))
+                    for k, v in data.get("transition_risk", {}).items():
+                        parts = k.split("->")
+                        if len(parts) == 2:
+                            cls.ACTION_TRANSITION_RISK[(parts[0], parts[1])] = v
+                cls._weights_loaded = True
+            except Exception:
+                pass
+
     @classmethod
     def get_metrics(cls) -> Dict[str, Any]:
         """Returns actual empirical evaluation metrics."""
@@ -63,6 +84,7 @@ class BiLSTMSequenceDetector:
 
     @classmethod
     def evaluate(cls, action_sequence: List[Dict[str, Any]]) -> Dict[str, Any]:
+        cls.load_trained_weights()
         """
         Evaluates a temporal sequence of agent action events.
         

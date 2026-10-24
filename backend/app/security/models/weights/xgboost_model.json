@@ -1,0 +1,15 @@
+{
+  "base_logit": -2.2,
+  "feature_impacts": {
+    "is_unauthorized_tool": 5.494,
+    "contains_path_traversal": 5.302,
+    "is_prohibited_for_role": 3.571,
+    "contains_sensitive_token": 5.302,
+    "prior_session_violations": 2.977,
+    "excessive_payload_size": 4.982,
+    "external_network_target": 2.982,
+    "is_admin_role": -0.347,
+    "is_whitelisted_tool": -0.384,
+    "standard_argument_shape": -0.384
+  }
+}
