@@ -1,10 +1,10 @@
 import React from 'react';
-import { Shield, Radio, Bell, LogOut, User as UserIcon } from 'lucide-react';
+import { Shield, Radio, Bell, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 
 export const Navbar: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { wsConnected, pendingApprovalsCount } = useNotifications();
 
   return (
@@ -47,26 +47,16 @@ export const Navbar: React.FC = () => {
           </div>
         )}
 
-        {/* User Info & Actions */}
+        {/* User Info / Active Operator Badge */}
         {user && (
-          <div className="flex items-center space-x-3 pl-3 border-l border-slate-800">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
-                <UserIcon className="w-4 h-4" />
-              </div>
-              <div className="hidden md:block text-left">
-                <div className="text-xs font-medium text-slate-200">{user.full_name}</div>
-                <div className="text-[10px] font-mono text-purple-400 uppercase">{user.role}</div>
-              </div>
+          <div className="flex items-center space-x-2 pl-3 border-l border-slate-800">
+            <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
+              <UserIcon className="w-4 h-4" />
             </div>
-
-            <button
-              onClick={logout}
-              title="Sign Out"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-900 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div className="hidden md:block text-left">
+              <div className="text-xs font-medium text-slate-200">{user.full_name}</div>
+              <div className="text-[10px] font-mono text-purple-400 uppercase">{user.role}</div>
+            </div>
           </div>
         )}
       </div>

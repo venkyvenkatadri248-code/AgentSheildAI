@@ -126,11 +126,11 @@ class GeminiService:
             # Start chat session
             chat = model.start_chat(history=history[:-1] if history else [])
             
-            # Send message with streaming
-            response_stream = chat.send_message(user_message_content, stream=True)
+            # Send message with native async streaming
+            response_stream = await chat.send_message_async(user_message_content, stream=True)
             
             accumulated_text = ""
-            for chunk in response_stream:
+            async for chunk in response_stream:
                 if chunk.text:
                     accumulated_text += chunk.text
                     yield {"event": "chunk", "data": {"text": chunk.text}}

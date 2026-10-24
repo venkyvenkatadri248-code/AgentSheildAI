@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
-from app.database.session import get_db
+from app.database.session import get_db, SessionLocal
 from app.models.entities import Conversation, Message, Agent, User
 from app.schemas.api_schemas import (
     ConversationCreate, ConversationUpdate, ConversationResponse, MessageResponse, MessageSubmitRequest
@@ -127,37 +127,51 @@ async def send_message_and_stream(
         conv.title = content[:30] + ("..." if len(content) > 30 else "")
     db.commit()
 
+    conv_id = conv.id
+    user_id = current_user.id
+    agent_id = agent.id
+    agent_key = agent.key
+
     async def event_generator():
         accumulated_assistant_text = ""
         final_status = "COMPLETED"
 
-        async for chunk in GeminiService.stream_chat_response(
-            db=db,
-            actor=current_user,
-            conversation=conv,
-            agent=agent,
-            user_message_content=content
-        ):
-            event_type = chunk.get("event", "chunk")
-            data = chunk.get("data", {})
-            if event_type == "chunk":
-                accumulated_assistant_text += data.get("text", "")
-            elif event_type == "done":
-                final_status = data.get("status", "COMPLETED")
+        with SessionLocal() as stream_db:
+            active_conv = stream_db.query(Conversation).filter(Conversation.id == conv_id).first()
+            active_user = stream_db.query(User).filter(User.id == user_id).first()
+            active_agent = stream_db.query(Agent).filter(Agent.id == agent_id).first()
 
-            yield f"event: {event_type}\ndata: {json.dumps(data)}\n\n"
+            if not active_conv or not active_user or not active_agent:
+                yield f"event: error\ndata: {json.dumps({'message': 'Conversation or agent session missing'})}\n\n"
+                return
 
-        # Persist assistant message in database
-        if accumulated_assistant_text.strip():
-            assistant_msg = Message(
-                conversation_id=conv.id,
-                sender="assistant",
-                content=accumulated_assistant_text,
-                model=agent.key,
-                execution_status=final_status
-            )
-            db.add(assistant_msg)
-            db.commit()
+            async for chunk in GeminiService.stream_chat_response(
+                db=stream_db,
+                actor=active_user,
+                conversation=active_conv,
+                agent=active_agent,
+                user_message_content=content
+            ):
+                event_type = chunk.get("event", "chunk")
+                data = chunk.get("data", {})
+                if event_type == "chunk":
+                    accumulated_assistant_text += data.get("text", "")
+                elif event_type == "done":
+                    final_status = data.get("status", "COMPLETED")
+
+                yield f"event: {event_type}\ndata: {json.dumps(data)}\n\n"
+
+            # Persist assistant message in database
+            if accumulated_assistant_text.strip():
+                assistant_msg = Message(
+                    conversation_id=conv_id,
+                    sender="assistant",
+                    content=accumulated_assistant_text,
+                    model=agent_key,
+                    execution_status=final_status
+                )
+                stream_db.add(assistant_msg)
+                stream_db.commit()
 
     return StreamingResponse(
         event_generator(),
