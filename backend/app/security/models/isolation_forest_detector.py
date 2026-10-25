@@ -51,6 +51,21 @@ class IsolationForestAnomalyDetector:
         if cls._weights_loaded:
             return
         import os, json
+
+        metrics_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "weights", "isolation_forest_metrics.json"))
+        if os.path.exists(metrics_file):
+            try:
+                with open(metrics_file, "r", encoding="utf-8") as f:
+                    m = json.load(f)
+                    cls.BENCHMARK_METRICS["precision"] = m.get("precision", cls.BENCHMARK_METRICS["precision"])
+                    cls.BENCHMARK_METRICS["recall"] = m.get("recall", cls.BENCHMARK_METRICS["recall"])
+                    cls.BENCHMARK_METRICS["f1_score"] = m.get("f1_score", cls.BENCHMARK_METRICS["f1_score"])
+                    cls.BENCHMARK_METRICS["false_positive_rate"] = m.get("false_positive_rate", cls.BENCHMARK_METRICS["false_positive_rate"])
+                    cls.BENCHMARK_METRICS["avg_latency_ms"] = m.get("avg_latency_ms", cls.BENCHMARK_METRICS["avg_latency_ms"])
+                    cls.BENCHMARK_METRICS["sample_count"] = m.get("n_eval_samples", cls.BENCHMARK_METRICS["sample_count"])
+            except Exception:
+                pass
+
         weights_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "weights", "isolation_forest_model.json"))
         if os.path.exists(weights_file):
             try:
@@ -60,13 +75,15 @@ class IsolationForestAnomalyDetector:
                         if k in cls.LEARNED_BASELINE_DISTRIBUTION:
                             cls.LEARNED_BASELINE_DISTRIBUTION[k]["mean"] = v.get("mean", cls.LEARNED_BASELINE_DISTRIBUTION[k]["mean"])
                             cls.LEARNED_BASELINE_DISTRIBUTION[k]["std"] = v.get("std", cls.LEARNED_BASELINE_DISTRIBUTION[k]["std"])
-                cls._weights_loaded = True
             except Exception:
                 pass
+
+        cls._weights_loaded = True
 
     @classmethod
     def get_metrics(cls) -> Dict[str, Any]:
         """Returns actual empirical evaluation metrics."""
+        cls.load_trained_weights()
         return dict(cls.BENCHMARK_METRICS)
 
     @classmethod

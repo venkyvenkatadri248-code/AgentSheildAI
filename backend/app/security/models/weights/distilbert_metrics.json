@@ -1,0 +1,22 @@
+{
+  "model_name": "DistilBERT-Prompt-Injection-Detector",
+  "n_train_samples": 300,
+  "n_test_samples": 545,
+  "precision": 0.9276,
+  "recall": 0.9607,
+  "f1_score": 0.9439,
+  "false_positive_rate": 0.0792,
+  "avg_latency_ms": 124.836,
+  "confusion_matrix": {
+    "tp": 269,
+    "fp": 21,
+    "tn": 244,
+    "fn": 11
+  },
+  "heldout_agent_injection_bench": {
+    "n_samples": 182,
+    "precision": 0.7877,
+    "recall": 0.993,
+    "f1_score": 0.8785
+  }
+}

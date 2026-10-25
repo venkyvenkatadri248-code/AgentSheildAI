@@ -58,20 +58,37 @@ class XGBoostEventDetector:
         if cls._weights_loaded:
             return
         import os, json
-        weights_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "weights", "xgboost_model.json"))
-        if os.path.exists(weights_file):
+
+        metrics_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "weights", "xgboost_metrics.json"))
+        if os.path.exists(metrics_file):
             try:
-                with open(weights_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    cls.BASE_VALUE_LOGIT = data.get("base_logit", cls.BASE_VALUE_LOGIT)
-                    cls.FEATURE_IMPACT_WEIGHTS.update(data.get("feature_impacts", {}))
-                cls._weights_loaded = True
+                with open(metrics_file, "r", encoding="utf-8") as f:
+                    m = json.load(f)
+                    cls.BENCHMARK_METRICS["precision"] = m.get("precision", cls.BENCHMARK_METRICS["precision"])
+                    cls.BENCHMARK_METRICS["recall"] = m.get("recall", cls.BENCHMARK_METRICS["recall"])
+                    cls.BENCHMARK_METRICS["f1_score"] = m.get("f1_score", cls.BENCHMARK_METRICS["f1_score"])
+                    cls.BENCHMARK_METRICS["false_positive_rate"] = m.get("false_positive_rate", cls.BENCHMARK_METRICS["false_positive_rate"])
+                    cls.BENCHMARK_METRICS["avg_latency_ms"] = m.get("avg_latency_ms", cls.BENCHMARK_METRICS["avg_latency_ms"])
+                    cls.BENCHMARK_METRICS["sample_count"] = m.get("n_test_samples", cls.BENCHMARK_METRICS["sample_count"])
             except Exception:
                 pass
+
+        shap_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "weights", "xgboost_shap_config.json"))
+        if os.path.exists(shap_file):
+            try:
+                with open(shap_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    cls.BASE_VALUE_LOGIT = data.get("base_expected_value", cls.BASE_VALUE_LOGIT)
+                    cls.FEATURE_IMPACT_WEIGHTS.update(data.get("top_feature_impacts", {}))
+            except Exception:
+                pass
+
+        cls._weights_loaded = True
 
     @classmethod
     def get_metrics(cls) -> Dict[str, Any]:
         """Returns actual empirical evaluation metrics."""
+        cls.load_trained_weights()
         return dict(cls.BENCHMARK_METRICS)
 
     @classmethod

@@ -1,0 +1,18 @@
+{
+  "features": [
+    "arg_character_length",
+    "argument_keys_count",
+    "path_depth_levels",
+    "special_character_density",
+    "inter_request_interval_s",
+    "entropy_shannon"
+  ],
+  "training_description": "Fitted strictly on legitimate benign operational agent distributions. Ground truth label 0.",
+  "eval_description": "Evaluated separately on held-out benign (0) and suspicious (1) operational events.",
+  "sample_counts": {
+    "train_benign_count": 260,
+    "eval_total_count": 195,
+    "eval_benign_count": 51,
+    "eval_anomalous_count": 144
+  }
+}

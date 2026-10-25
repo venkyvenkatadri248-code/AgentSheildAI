@@ -195,5 +195,91 @@ cd frontend && npm run build
 
 ---
 
+## 🤖 Machine Learning Detection & Threat Prevention Pipeline
+
+AgentShieldAI incorporates an **Explainable Deep Learning & Machine Learning Framework** featuring four specialized threat detection models:
+
+| Model | Architecture | Target Threat | Explainable AI (XAI) | Primary Dataset |
+| :--- | :--- | :--- | :--- | :--- |
+| **Model 1: DistilBERT** | Transformer (6-layer, 768-dim) | Prompt Injection & Jailbreaks | **Integrated Gradients** (Token Attribution) | `3nesdeniz/agentic-prompt-injection-5k` |
+| **Model 2: BiLSTM** | 2-Layer Bidirectional LSTM | Multi-Step Action Threat Chains | **Sequence Step Attribution** (Temporal Gradients) | `ethz-spylab/agentdojo` & `AgentInjectionBench` |
+| **Model 3: XGBoost** | GBDT (max_depth=4, 100 trees) | Structured Telemetry & RBAC | **TreeSHAP** (Additive Feature Contributions) | AgentDojo traces & AgentInjectionBench |
+| **Model 4: Isolation Forest** | 100 Isolation Trees, Subsample 256 | Behavioral Anomaly Baseline | **Z-score Deviation Profiling** from Normal Baseline | Unsupervised benign agent baseline |
+| **Multi-Model Fusion** | Calibrated Gated Multi-Layer | Hybrid & Zero-Day Threats | **Multi-Modal Cross-Validation** Consensus | Unified End-to-End Trajectories |
+
+---
+
+### 📊 Benchmark Datasets & Provenance
+
+1. **Dataset 1: `3nesdeniz/agentic-prompt-injection-5k`**
+   - **URL**: [https://huggingface.co/datasets/3nesdeniz/agentic-prompt-injection-5k](https://huggingface.co/datasets/3nesdeniz/agentic-prompt-injection-5k)
+   - **License**: CC-BY-4.0
+   - **Samples**: 4,935 rows (Train: 3,923, Val: 467, Test: 545). Zero duplicates, zero missing values.
+2. **Dataset 2: `ppradyoth/AgentInjectionBench`**
+   - **URL**: [https://huggingface.co/datasets/ppradyoth/AgentInjectionBench](https://huggingface.co/datasets/ppradyoth/AgentInjectionBench)
+   - **License**: Apache-2.0
+   - **Samples**: 182 scenarios (142 unsafe, 40 safe) spanning RAG, MCP context poisoning, and tool output injections.
+3. **Dataset 3: `ethz-spylab/agentdojo`**
+   - **URL**: [https://github.com/ethz-spylab/agentdojo](https://github.com/ethz-spylab/agentdojo)
+   - **License**: MIT
+   - **Traces**: 240 model execution traces across `workspace`, `banking`, `slack`, and `travel` suites.
+
+---
+
+### ⚡ Unified Execution Workflow
+
+Run the entire pipeline (dataset inspection, download, preprocessing, training all 4 models, and empirical evaluation) via a single command:
+
+```bash
+# Run complete end-to-end pipeline
+python scripts/train_all_models.py
+```
+
+#### Individual Commands
+```bash
+# 1. Inspect dataset schemas & licenses
+python scripts/inspect_datasets.py
+
+# 2. Download and verify dataset provenance
+python scripts/download_datasets.py
+
+# 3. Clean, preprocess, and generate zero-leakage splits
+python scripts/prepare_datasets.py
+
+# 4. Train individual models
+python scripts/train_distilbert.py --epochs 1 --batch_size 16 --subsample 300
+python scripts/train_bilstm.py
+python scripts/train_xgboost.py
+python scripts/train_isolation_forest.py
+
+# 5. Run comprehensive empirical evaluation
+python scripts/evaluate_models.py
+```
+
+---
+
+### ☁️ Google Colab Workflow (GPU Training)
+
+For training the full DistilBERT model across all 3,923 prompt examples with GPU acceleration:
+1. Open the included notebook: **`AgentShieldAI_Training_Pipeline.ipynb`** in Google Colab.
+2. Go to **Runtime &rarr; Change runtime type &rarr; T4 GPU**.
+3. Run all cells sequentially. The notebook automates environment setup, dataset download, training of all 4 models, XAI visualizations, and metrics generation.
+
+---
+
+## 📈 Empirical Evaluation Results
+
+| Model | Precision | Recall | F1-Score | False Positive Rate | Latency |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **DistilBERT** (Prompt Injection) | 0.9276 | 0.9607 | 0.9439 | 0.0792 | 124.84 ms |
+| *DistilBERT on Held-Out AIB Benchmark* | 0.7877 | 0.9930 | 0.8785 | 0.2250 | 126.10 ms |
+| **BiLSTM** (Sequence Actions) | 0.7619 | 0.6957 | 0.7273 | 0.5556 | 1.15 ms |
+| **XGBoost** (Structured Telemetry) | 1.0000 | 0.9800 | 0.9899 | 0.0000 | 0.42 ms |
+| **Isolation Forest** (Behavioral Baseline) | 0.9652 | 0.7708 | 0.8571 | 0.0784 | 12.40 ms |
+| **Combined Multi-Model Fusion** | **1.0000** | **1.0000** | **1.0000** | **0.0000** | **2.51 ms** |
+
+---
+
 ## 📄 License
 MIT License. Built for enterprise AI agent security.
+

@@ -57,12 +57,28 @@ class BiLSTMSequenceDetector:
     }
 
     _weights_loaded: bool = False
+    _checkpoint_loaded: bool = False
 
     @classmethod
     def load_trained_weights(cls):
         if cls._weights_loaded:
             return
         import os, json
+
+        metrics_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "weights", "bilstm_metrics.json"))
+        if os.path.exists(metrics_file):
+            try:
+                with open(metrics_file, "r", encoding="utf-8") as f:
+                    m = json.load(f)
+                    cls.BENCHMARK_METRICS["precision"] = m.get("precision", cls.BENCHMARK_METRICS["precision"])
+                    cls.BENCHMARK_METRICS["recall"] = m.get("recall", cls.BENCHMARK_METRICS["recall"])
+                    cls.BENCHMARK_METRICS["f1_score"] = m.get("f1_score", cls.BENCHMARK_METRICS["f1_score"])
+                    cls.BENCHMARK_METRICS["false_positive_rate"] = m.get("false_positive_rate", cls.BENCHMARK_METRICS["false_positive_rate"])
+                    cls.BENCHMARK_METRICS["avg_latency_ms"] = m.get("avg_latency_ms", cls.BENCHMARK_METRICS["avg_latency_ms"])
+                    cls.BENCHMARK_METRICS["sample_count"] = m.get("n_test_samples", cls.BENCHMARK_METRICS["sample_count"])
+            except Exception:
+                pass
+
         weights_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "weights", "bilstm_weights.json"))
         if os.path.exists(weights_file):
             try:
@@ -73,13 +89,15 @@ class BiLSTMSequenceDetector:
                         parts = k.split("->")
                         if len(parts) == 2:
                             cls.ACTION_TRANSITION_RISK[(parts[0], parts[1])] = v
-                cls._weights_loaded = True
             except Exception:
                 pass
+
+        cls._weights_loaded = True
 
     @classmethod
     def get_metrics(cls) -> Dict[str, Any]:
         """Returns actual empirical evaluation metrics."""
+        cls.load_trained_weights()
         return dict(cls.BENCHMARK_METRICS)
 
     @classmethod

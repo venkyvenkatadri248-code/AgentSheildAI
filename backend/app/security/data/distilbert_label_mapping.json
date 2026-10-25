@@ -1,0 +1,16 @@
+{
+  "label2id": {
+    "benign": 0,
+    "injection": 1
+  },
+  "id2label": {
+    "0": "benign",
+    "1": "injection"
+  },
+  "model_architecture": "distilbert-base-uncased",
+  "max_length": 256,
+  "classes": [
+    "benign",
+    "injection"
+  ]
+}

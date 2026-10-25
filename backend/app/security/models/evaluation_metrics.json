@@ -1,62 +1,137 @@
 {
-  "DistilBERT": {
-    "tp": 28,
-    "fp": 0,
-    "tn": 29,
-    "fn": 3,
-    "total_test_samples": 60,
+  "evaluation_timestamp": "2026-10-25T08:47:14Z",
+  "distilbert": {
+    "model_name": "DistilBERT-Prompt-Injection-Detector",
+    "n_train_samples": 300,
+    "n_test_samples": 545,
+    "precision": 0.9276,
+    "recall": 0.9607,
+    "f1_score": 0.9439,
+    "false_positive_rate": 0.0792,
+    "avg_latency_ms": 124.836,
+    "confusion_matrix": {
+      "tp": 269,
+      "fp": 21,
+      "tn": 244,
+      "fn": 11
+    },
+    "heldout_agent_injection_bench": {
+      "n_samples": 182,
+      "precision": 0.7877,
+      "recall": 0.993,
+      "f1_score": 0.8785
+    }
+  },
+  "bilstm": {
+    "model_name": "BiLSTM-Sequence-Threat-Detector",
+    "n_train_samples": 292,
+    "n_test_samples": 64,
+    "precision": 0.7619,
+    "recall": 0.6957,
+    "f1_score": 0.7273,
+    "false_positive_rate": 0.5556,
+    "avg_latency_ms": 1.145,
+    "confusion_matrix": {
+      "tp": 32,
+      "fp": 10,
+      "tn": 8,
+      "fn": 14
+    }
+  },
+  "xgboost": {
+    "model_name": "XGBoost-Structured-Event-Detector",
+    "n_train_samples": 928,
+    "n_test_samples": 200,
     "precision": 1.0,
-    "recall": 0.9032,
-    "f1_score": 0.9492,
+    "recall": 0.98,
+    "f1_score": 0.9899,
     "false_positive_rate": 0.0,
-    "avg_latency_ms": 0.008
+    "avg_latency_ms": 0.422,
+    "confusion_matrix": {
+      "tp": 147,
+      "fp": 0,
+      "tn": 50,
+      "fn": 3
+    },
+    "top_feature_impacts": {
+      "is_unauthorized_tool": 4.0837,
+      "prior_violations": 1.6178,
+      "step_index": 0.4092,
+      "agent_suite_workspace": 0.2195,
+      "tool_name_get_current_day": 0.1185,
+      "tool_name_search_calendar_events": 0.0749
+    }
   },
-  "BiLSTM": {
-    "tp": 25,
-    "fp": 3,
-    "tn": 17,
-    "fn": 0,
-    "total_test_samples": 45,
-    "precision": 0.8929,
-    "recall": 1.0,
-    "f1_score": 0.9434,
-    "false_positive_rate": 0.15,
-    "avg_latency_ms": 0.285
+  "isolation_forest": {
+    "model_name": "IsolationForest-Behavioral-Anomaly-Detector",
+    "n_train_samples": 260,
+    "n_eval_samples": 195,
+    "precision": 0.9652,
+    "recall": 0.7708,
+    "f1_score": 0.8571,
+    "false_positive_rate": 0.0784,
+    "avg_latency_ms": 12.405,
+    "confusion_matrix": {
+      "tp": 111,
+      "fp": 4,
+      "tn": 47,
+      "fn": 33
+    },
+    "baseline_features": {
+      "arg_character_length": {
+        "mean": 48.1577,
+        "std": 86.827,
+        "min": 2.0,
+        "max": 853.0
+      },
+      "argument_keys_count": {
+        "mean": 1.0269,
+        "std": 1.1404,
+        "min": 0.0,
+        "max": 6.0
+      },
+      "path_depth_levels": {
+        "mean": 0.1231,
+        "std": 0.4569,
+        "min": 0.0,
+        "max": 3.0
+      },
+      "special_character_density": {
+        "mean": 0.5248,
+        "std": 0.3388,
+        "min": 0.0749,
+        "max": 1.0
+      },
+      "inter_request_interval_s": {
+        "mean": 15.078,
+        "std": 4.6913,
+        "min": 2.0,
+        "max": 29.83
+      },
+      "entropy_shannon": {
+        "mean": 3.093,
+        "std": 1.5093,
+        "min": 1.0,
+        "max": 4.9098
+      }
+    }
   },
-  "XGBoost": {
-    "tp": 31,
-    "fp": 0,
-    "tn": 29,
-    "fn": 0,
-    "total_test_samples": 60,
+  "multi_model_fusion": {
+    "model_name": "Multi-Model-Fusion-Engine",
     "precision": 1.0,
     "recall": 1.0,
     "f1_score": 1.0,
     "false_positive_rate": 0.0,
-    "avg_latency_ms": 0.261
-  },
-  "IsolationForest": {
-    "tp": 17,
-    "fp": 73,
-    "tn": 0,
-    "fn": 0,
-    "total_test_samples": 90,
-    "precision": 0.1889,
-    "recall": 1.0,
-    "f1_score": 0.3178,
-    "false_positive_rate": 1.0,
-    "avg_latency_ms": 0.182
-  },
-  "MultiModelFusion": {
-    "tp": 3,
-    "fp": 0,
-    "tn": 3,
-    "fn": 0,
-    "total_test_samples": 6,
-    "precision": 1.0,
-    "recall": 1.0,
-    "f1_score": 1.0,
-    "false_positive_rate": 0.0,
-    "avg_latency_ms": 2.477
+    "avg_latency_ms": 2.513,
+    "confusion_matrix": {
+      "tp": 46,
+      "fp": 0,
+      "tn": 18,
+      "fn": 0
+    },
+    "empirical_comparison": {
+      "hypothesis_demonstration": "Multi-modal fusion provides defense-in-depth across heterogeneous attack surfaces (prompts, trajectories, and parameters). While single-modality models excel in narrow domains (e.g. XGBoost on structured telemetry), fusion achieves superior robustness against hybrid evasion without single-point failure.",
+      "tradeoff_analysis": "Latency increases slightly (from ~0.42ms for XGBoost to ~2.5ms for Fusion pipeline), but catches attacks that bypass text-only or tabular-only classifiers."
+    }
   }
 }
