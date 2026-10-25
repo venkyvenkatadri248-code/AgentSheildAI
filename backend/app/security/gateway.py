@@ -396,6 +396,37 @@ class CentralSecurityGateway:
                     )
 
         # -------------------------------------------------------------
+        # CHECK 10.5: Multi-Model Threat Detection (Ensemble ML Guardrail)
+        # -------------------------------------------------------------
+        if ml_eval.get("prediction") == "THREAT_DETECTED" and (ml_eval.get("confidence") or 0.0) >= 0.85:
+            primary_cat = ml_eval.get("primary_threat_category", "prompt_injection")
+            explanation = (
+                f"Multi-Model Ensemble Security Threat Detected: {ml_eval.get('explanation', '')} "
+                f"(Consensus confidence: {round((ml_eval.get('confidence') or 0.0) * 100, 1)}%, "
+                f"Detecting models: {', '.join(ml_eval.get('detecting_models', []))}). "
+                f"Gateway intercepted and prevented unverified agent execution."
+            )
+            ev = {
+                "target_resource": target_resource,
+                "ml_threat_evaluation": ml_eval,
+                "xai_report": ml_eval.get("xai_report")
+            }
+            return cls._block_action(
+                db=db,
+                actor=actor,
+                agent=agent,
+                decision_id=decision_id,
+                tool_name=tool_name,
+                risk_category=primary_cat,
+                severity="CRITICAL" if (ml_eval.get("confidence") or 0.0) >= 0.90 else "HIGH",
+                policy=policies.get(primary_cat) or policies.get("prompt_injection"),
+                explanation=explanation,
+                evidence=ev,
+                conversation_id=conversation_id,
+                target_resource=target_resource
+            )
+
+        # -------------------------------------------------------------
         # CHECK 11: All Checks Passed -> ALLOW Tool Execution
         # -------------------------------------------------------------
         explanation = f"Security verification passed for tool '{tool_name}'. No threat indicators detected."

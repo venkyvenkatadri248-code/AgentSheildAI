@@ -33,6 +33,23 @@ async def lifespan(app: FastAPI):
     with SessionLocal() as db:
         seed_database(db)
 
+    # Preload threat detection models and fusion engine
+    try:
+        from app.security.models import (
+            DistilBERTThreatDetector,
+            BiLSTMSequenceDetector,
+            XGBoostEventDetector,
+            IsolationForestAnomalyDetector
+        )
+        logger.info("Preloading AgentShieldAI threat detection models...")
+        DistilBERTThreatDetector.load_trained_weights()
+        BiLSTMSequenceDetector.load_trained_weights()
+        XGBoostEventDetector.load_trained_weights()
+        IsolationForestAnomalyDetector.load_trained_weights()
+        logger.info("All 4 detection models & MultiModelFusionEngine loaded and ready.")
+    except Exception as e:
+        logger.warning(f"Model preloading warning: {e}")
+
     logger.info(f"AgentShieldAI Backend started successfully in {settings.APP_ENV} mode.")
     yield
     logger.info("AgentShieldAI Backend shutting down.")
