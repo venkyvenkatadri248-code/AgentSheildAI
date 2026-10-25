@@ -1,0 +1,258 @@
+{
+  "act": [
+    2.483,
+    "prompt_injection"
+  ],
+  "tokens": [
+    2.312,
+    "prompt_injection"
+  ],
+  ">": [
+    1.895,
+    "prompt_injection"
+  ],
+  "commands": [
+    2.483,
+    "prompt_injection"
+  ],
+  "output": [
+    3.317,
+    "prompt_injection"
+  ],
+  "assistant": [
+    2.483,
+    "prompt_injection"
+  ],
+  "credentials": [
+    2.774,
+    "prompt_injection"
+  ],
+  "without": [
+    2.636,
+    "prompt_injection"
+  ],
+  "authentication": [
+    2.119,
+    "prompt_injection"
+  ],
+  "persona": [
+    1.895,
+    "jailbreak"
+  ],
+  ")": [
+    3.124,
+    "prompt_injection"
+  ],
+  "administrative": [
+    1.895,
+    "prompt_injection"
+  ],
+  "pretend": [
+    2.312,
+    "prompt_injection"
+  ],
+  "developer": [
+    1.895,
+    "prompt_injection"
+  ],
+  "now": [
+    3.016,
+    "prompt_injection"
+  ],
+  "disregard": [
+    2.483,
+    "prompt_injection"
+  ],
+  "simulate": [
+    2.119,
+    "prompt_injection"
+  ],
+  "your": [
+    2.9,
+    "prompt_injection"
+  ],
+  "me": [
+    2.636,
+    "prompt_injection"
+  ],
+  "ignore": [
+    2.483,
+    "prompt_injection"
+  ],
+  "secret": [
+    3.317,
+    "data_exfiltration"
+  ],
+  "hashes": [
+    1.895,
+    "prompt_injection"
+  ],
+  "previous": [
+    2.774,
+    "prompt_injection"
+  ],
+  "[": [
+    2.119,
+    "prompt_injection"
+  ],
+  "import": [
+    1.895,
+    "prompt_injection"
+  ],
+  "--": [
+    2.636,
+    "prompt_injection"
+  ],
+  ":": [
+    3.9,
+    "prompt_injection"
+  ],
+  "stored": [
+    2.483,
+    "prompt_injection"
+  ],
+  "http": [
+    3.016,
+    "prompt_injection"
+  ],
+  "filters": [
+    2.774,
+    "prompt_injection"
+  ],
+  "\"": [
+    2.312,
+    "prompt_injection"
+  ],
+  "api": [
+    1.895,
+    "prompt_injection"
+  ],
+  "internal": [
+    2.119,
+    "prompt_injection"
+  ],
+  "guidelines": [
+    1.895,
+    "prompt_injection"
+  ],
+  "who": [
+    1.895,
+    "prompt_injection"
+  ],
+  "configuration": [
+    2.119,
+    "prompt_injection"
+  ],
+  "(": [
+    3.124,
+    "prompt_injection"
+  ],
+  "reveal": [
+    2.774,
+    "prompt_injection"
+  ],
+  "password": [
+    1.895,
+    "data_exfiltration"
+  ],
+  "/etc/passwd": [
+    1.895,
+    "prompt_injection"
+  ],
+  ";": [
+    3.712,
+    "prompt_injection"
+  ],
+  "bypass": [
+    2.483,
+    "prompt_injection"
+  ],
+  "override": [
+    2.483,
+    "prompt_injection"
+  ],
+  "dump": [
+    2.774,
+    "data_exfiltration"
+  ],
+  "how": [
+    2.119,
+    "prompt_injection"
+  ],
+  "numbers": [
+    1.895,
+    "prompt_injection"
+  ],
+  "confidential": [
+    1.895,
+    "prompt_injection"
+  ],
+  "print": [
+    3.317,
+    "prompt_injection"
+  ],
+  "do": [
+    2.119,
+    "prompt_injection"
+  ],
+  "curl": [
+    2.636,
+    "malicious_instruction"
+  ],
+  "]": [
+    2.119,
+    "prompt_injection"
+  ],
+  "policies": [
+    2.119,
+    "prompt_injection"
+  ],
+  "keys": [
+    1.895,
+    "prompt_injection"
+  ],
+  "dan": [
+    2.312,
+    "jailbreak"
+  ],
+  "rules": [
+    2.9,
+    "prompt_injection"
+  ],
+  "roleplay": [
+    1.895,
+    "prompt_injection"
+  ],
+  "system": [
+    3.317,
+    "prompt_injection"
+  ],
+  "as": [
+    3.124,
+    "prompt_injection"
+  ],
+  "restrictions": [
+    2.483,
+    "prompt_injection"
+  ],
+  "unrestricted": [
+    3.224,
+    "jailbreak"
+  ],
+  "exec": [
+    1.895,
+    "malicious_instruction"
+  ],
+  "access": [
+    2.312,
+    "prompt_injection"
+  ],
+  "mode": [
+    2.774,
+    "prompt_injection"
+  ],
+  "command": [
+    3.9,
+    "prompt_injection"
+  ]
+}

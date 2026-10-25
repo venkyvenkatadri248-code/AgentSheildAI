@@ -1,0 +1,32 @@
+{
+  "action_severity": {
+    "list_user_files": 1.931,
+    "edit_document": 0.4,
+    "inspect_dataset_schema": 0.827,
+    "validate_dataset_quality": 0.4,
+    "read_document_content": 2.978,
+    "draft_email": 0.4,
+    "summarize_document": 0.4,
+    "search_research_papers": 0.4,
+    "extract_web_content": 1.543,
+    "execute_arbitrary_code": 3.5,
+    "summarize_email_thread": 1.007,
+    "calculate_descriptive_stats": 1.171,
+    "send_authorized_email": 3.5,
+    "create_document": 0.4,
+    "generate_data_summary_report": 1.171,
+    "search_web_sources": 0.97,
+    "search_mailbox": 1.007
+  },
+  "transition_risk": {
+    "send_authorized_email->send_authorized_email": 4.0,
+    "generate_data_summary_report->send_authorized_email": 4.0,
+    "list_user_files->read_document_content": 1.5,
+    "summarize_email_thread->send_authorized_email": 4.0,
+    "inspect_dataset_schema->execute_arbitrary_code": 4.0,
+    "extract_web_content->extract_web_content": 4.0,
+    "read_document_content->send_authorized_email": 4.0,
+    "list_user_files->send_authorized_email": 4.0,
+    "read_document_content->read_document_content": 4.0
+  }
+}

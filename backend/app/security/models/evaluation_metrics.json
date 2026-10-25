@@ -1,5 +1,5 @@
 {
-  "evaluation_timestamp": "2026-10-25T08:47:14Z",
+  "evaluation_timestamp": "2026-10-25T10:27:28Z",
   "distilbert": {
     "model_name": "DistilBERT-Prompt-Injection-Detector",
     "n_train_samples": 300,
@@ -122,7 +122,7 @@
     "recall": 1.0,
     "f1_score": 1.0,
     "false_positive_rate": 0.0,
-    "avg_latency_ms": 2.513,
+    "avg_latency_ms": 2.51,
     "confusion_matrix": {
       "tp": 46,
       "fp": 0,

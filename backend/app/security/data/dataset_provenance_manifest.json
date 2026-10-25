@@ -1,12 +1,12 @@
 {
   "project": "AgentShieldAI",
-  "generated_at": "2026-10-25T08:28:02.582135+00:00",
+  "generated_at": "2026-10-25T10:49:36.741564+00:00",
   "datasets": {
     "agentic_prompt_injection_5k": {
       "dataset_name": "agentic-prompt-injection-5k",
       "source": "https://huggingface.co/datasets/3nesdeniz/agentic-prompt-injection-5k",
       "license": "CC-BY-4.0",
-      "local_dir": "C:\\Users\\Q\\Desktop\\M.Tech\\ShieldAI\\backend\\app\\security\\data\\agentic_prompt_injection_5k",
+      "local_dir": "c:\\Users\\Q\\Desktop\\M.Tech\\ShieldAI\\backend\\app\\security\\data\\agentic_prompt_injection_5k",
       "files": {
         "train.parquet": 367573,
         "validation.parquet": 37667,
@@ -18,7 +18,7 @@
       "dataset_name": "AgentInjectionBench",
       "source": "https://huggingface.co/datasets/ppradyoth/AgentInjectionBench",
       "license": "Apache-2.0",
-      "local_dir": "C:\\Users\\Q\\Desktop\\M.Tech\\ShieldAI\\backend\\app\\security\\data\\agent_injection_bench",
+      "local_dir": "c:\\Users\\Q\\Desktop\\M.Tech\\ShieldAI\\backend\\app\\security\\data\\agent_injection_bench",
       "files": {
         "agent_injection_bench.jsonl": 314335,
         "taxonomy.json": 7773
@@ -29,14 +29,14 @@
       "dataset_name": "agentdojo",
       "source": "https://github.com/ethz-spylab/agentdojo",
       "license": "MIT License",
-      "local_dir": "C:\\Users\\Q\\Desktop\\M.Tech\\ShieldAI\\backend\\app\\security\\data\\agentdojo",
+      "local_dir": "c:\\Users\\Q\\Desktop\\M.Tech\\ShieldAI\\backend\\app\\security\\data\\agentdojo",
       "suites": [
         "workspace",
         "banking",
         "slack",
         "travel"
       ],
-      "traces_downloaded": 240,
+      "traces_downloaded": 0,
       "status": "COMPLETED"
     }
   }
